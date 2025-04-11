@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, ShieldAlert, ArrowRightCircle, CheckCircle, Clock, Server, User } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ThreatDetails = ({ selectedThreat }) => {
+  const { toast } = useToast();
+
   if (!selectedThreat) {
     return (
       <Card className="bg-gray-900 border-gray-800 h-[400px]">
@@ -35,6 +38,20 @@ const ThreatDetails = ({ selectedThreat }) => {
       default:
         return "text-gray-500 bg-gray-500/10";
     }
+  };
+
+  const handleRespondButton = () => {
+    toast({
+      title: "Response Initiated",
+      description: `Automated response to ${selectedThreat.title} has been triggered.`,
+    });
+  };
+
+  const handleMarkAsResolved = () => {
+    toast({
+      title: "Threat Resolved",
+      description: `${selectedThreat.title} has been marked as resolved.`,
+    });
   };
 
   return (
@@ -103,10 +120,19 @@ const ThreatDetails = ({ selectedThreat }) => {
         )}
 
         <div className="flex gap-2 pt-2">
-          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 flex-1">
+          <Button 
+            size="sm" 
+            className="bg-emerald-600 hover:bg-emerald-700 flex-1"
+            onClick={handleRespondButton}
+          >
             Respond
           </Button>
-          <Button size="sm" variant="outline" className="flex-1 border-gray-700 text-gray-300">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="flex-1 border-gray-700 text-gray-300"
+            onClick={handleMarkAsResolved}
+          >
             Mark as Resolved
           </Button>
         </div>

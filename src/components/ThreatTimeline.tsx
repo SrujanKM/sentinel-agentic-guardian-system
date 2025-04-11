@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Shield, Lock, Server, User, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
+  const { toast } = useToast();
+  
   // Map threat type to icon
   const getThreatIcon = (type) => {
     switch (type.toLowerCase()) {
@@ -38,6 +41,18 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
     }
   };
 
+  const handleThreatDetail = (threat) => {
+    onThreatSelect(threat);
+  };
+
+  const handleViewAll = () => {
+    toast({
+      title: "Switching to Threats Tab",
+      description: "Showing all threats in the system",
+    });
+    // This would typically switch to the threats tab in a real implementation
+  };
+
   return (
     <Card className="bg-gray-900 border-gray-800 shadow-lg">
       <CardHeader className="pb-2">
@@ -52,7 +67,6 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
             <div 
               key={threat.id} 
               className="relative pl-6 border-l border-gray-700 pb-4 last:pb-0"
-              onClick={() => onThreatSelect(threat)}
             >
               {/* Timeline node */}
               <div className="absolute left-[-8px] top-0 w-4 h-4 rounded-full border-2 border-gray-700 bg-gray-900 flex items-center justify-center">
@@ -60,7 +74,10 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
               </div>
               
               {/* Timeline content */}
-              <div className="bg-gray-800 rounded-md p-3 hover:bg-gray-750 transition-colors cursor-pointer">
+              <div 
+                className="bg-gray-800 rounded-md p-3 hover:bg-gray-750 transition-colors cursor-pointer"
+                onClick={() => handleThreatDetail(threat)}
+              >
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h4 className="font-medium text-white">{threat.title}</h4>
@@ -80,6 +97,10 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
                     variant="ghost" 
                     size="sm" 
                     className="text-xs text-emerald-400 hover:text-emerald-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleThreatDetail(threat);
+                    }}
                   >
                     Details
                   </Button>
@@ -89,7 +110,11 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
           ))}
           
           {!expanded && threats.length > 5 && (
-            <Button variant="ghost" className="w-full text-gray-400 hover:text-white">
+            <Button 
+              variant="ghost" 
+              className="w-full text-gray-400 hover:text-white"
+              onClick={handleViewAll}
+            >
               View All Threats
             </Button>
           )}

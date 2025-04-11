@@ -1,17 +1,38 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Filter, AlertTriangle, Info, TerminalSquare, Globe, Cloud, Server } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { fetchLogs } from "@/services/api";
 
-const LogsPanel = ({ logs }) => {
+const LogsPanel = ({ logs = [] }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [localLogs, setLocalLogs] = useState(logs);
   
-  const filteredLogs = logs.filter(log => 
+  useEffect(() => {
+    setLocalLogs(logs);
+  }, [logs]);
+
+  // Refresh logs every 15 seconds
+  useEffect(() => {
+    const refreshInterval = setInterval(async () => {
+      try {
+        const newLogs = await fetchLogs();
+        setLocalLogs(newLogs);
+      } catch (error) {
+        console.error("Failed to refresh logs:", error);
+      }
+    }, 15000);
+
+    return () => clearInterval(refreshInterval);
+  }, []);
+  
+  const filteredLogs = localLogs.filter(log => 
     log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.source.toLowerCase().includes(searchTerm.toLowerCase())
+    log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    log.level.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getLogIcon = (level) => {
@@ -84,31 +105,37 @@ const LogsPanel = ({ logs }) => {
       <CardContent className="p-0">
         <ScrollArea className="h-[300px]">
           <div className="space-y-1 p-2">
-            {filteredLogs.map((log, index) => (
-              <div 
-                key={index} 
-                className="text-xs p-2 rounded bg-gray-800 hover:bg-gray-750 transition-colors"
-              >
-                <div className="flex items-start gap-2">
-                  {getLogIcon(log.level)}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between">
-                      <span className="font-mono text-gray-400">{log.timestamp}</span>
-                      <div className="flex items-center gap-1">
-                        {getSourceBadge(log.source)}
+            {filteredLogs.length > 0 ? (
+              filteredLogs.map((log, index) => (
+                <div 
+                  key={index} 
+                  className="text-xs p-2 rounded bg-gray-800 hover:bg-gray-750 transition-colors"
+                >
+                  <div className="flex items-start gap-2">
+                    {getLogIcon(log.level)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between">
+                        <span className="font-mono text-gray-400">{log.timestamp}</span>
+                        <div className="flex items-center gap-1">
+                          {getSourceBadge(log.source)}
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-white mt-1 break-words">{log.message}</p>
-                    <div className="flex justify-end mt-1 text-gray-500">
-                      <div className="flex items-center gap-1">
-                        {getSourceIcon(log.source)}
-                        <span className="truncate">{log.source}</span>
+                      <p className="text-white mt-1 break-words">{log.message}</p>
+                      <div className="flex justify-end mt-1 text-gray-500">
+                        <div className="flex items-center gap-1">
+                          {getSourceIcon(log.source)}
+                          <span className="truncate">{log.source}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="flex items-center justify-center h-[250px] text-gray-500">
+                {searchTerm ? "No logs match your search" : "No logs available"}
               </div>
-            ))}
+            )}
           </div>
         </ScrollArea>
       </CardContent>

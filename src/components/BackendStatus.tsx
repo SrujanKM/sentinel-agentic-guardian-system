@@ -2,10 +2,14 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Server, Database, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Server, Database, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const BackendStatus = () => {
+  const { toast } = useToast();
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
   const apiEndpoints = [
     { name: "GET /logs", description: "Fetch logs with filtering", status: "active" },
     { name: "POST /logs", description: "Submit new log entries", status: "active" },
@@ -13,6 +17,19 @@ const BackendStatus = () => {
     { name: "POST /actions", description: "Trigger security actions", status: "active" },
     { name: "GET /stats", description: "System statistics", status: "active" }
   ];
+
+  const handleOpenDocs = (type) => {
+    const url = type === "swagger" 
+      ? `${apiUrl}/docs` 
+      : `${apiUrl}/redoc`;
+    
+    window.open(url, "_blank");
+    
+    toast({
+      title: `Opening ${type === "swagger" ? "Swagger" : "ReDoc"} Documentation`,
+      description: `API documentation at ${url}`,
+    });
+  };
 
   return (
     <Card className="bg-gray-900 border-gray-800">
@@ -72,13 +89,25 @@ const BackendStatus = () => {
           </div>
           
           <div className="flex justify-between mt-4">
-            <Button variant="outline" size="sm" className="gap-1 text-xs bg-gray-800 hover:bg-gray-700">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1 text-xs bg-gray-800 hover:bg-gray-700"
+              onClick={() => handleOpenDocs("swagger")}
+            >
               <Server className="h-3 w-3" />
               Swagger Docs
+              <ExternalLink className="h-3 w-3 ml-1" />
             </Button>
-            <Button variant="outline" size="sm" className="gap-1 text-xs bg-gray-800 hover:bg-gray-700">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1 text-xs bg-gray-800 hover:bg-gray-700"
+              onClick={() => handleOpenDocs("redoc")}
+            >
               <Database className="h-3 w-3" />
               ReDoc
+              <ExternalLink className="h-3 w-3 ml-1" />
             </Button>
           </div>
         </div>
