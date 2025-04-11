@@ -1,58 +1,61 @@
 
-import React, { useEffect, useState } from "react";
-import { Shield } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Terminal } from "lucide-react";
 
 const StartupSequence = () => {
-  const [textIndex, setTextIndex] = useState(0);
-  const [cursorVisible, setCursorVisible] = useState(true);
-
-  const startupTexts = [
-    "Initializing Sentinel Agentic Guardian System...",
-    "Loading core modules...",
-    "Establishing connection to monitoring agents...",
-    "Configuring anomaly detection models...",
-    "Preparing agent behavioral analysis system...",
-    "Initializing threat response mechanisms...",
-    "Sentinel AGS ready for activation."
-  ];
+  const [lines, setLines] = useState([]);
+  const [showCursor, setShowCursor] = useState(true);
 
   useEffect(() => {
-    // Auto-advance text sequence
-    const textTimer = setTimeout(() => {
-      if (textIndex < startupTexts.length - 1) {
-        setTextIndex(textIndex + 1);
-      }
-    }, 800);
+    const startupMessages = [
+      { text: "Loading Python environment...", delay: 500 },
+      { text: "Initializing FastAPI server...", delay: 800 },
+      { text: "Creating SQLite database with encryption...", delay: 1200 },
+      { text: "Loading Windows Event Log module (pywin32)...", delay: 1000 },
+      { text: "Connecting to Event Log sources...", delay: 900 },
+      { text: "Loading Isolation Forest model...", delay: 1100 },
+      { text: "Starting anomaly detection service...", delay: 1000 },
+      { text: "Loading threat intelligence database...", delay: 700 },
+      { text: "Starting automated response system...", delay: 900 },
+      { text: "System ready. Click Initialize to begin.", delay: 1000 }
+    ];
 
-    // Cursor blink effect
-    const cursorTimer = setInterval(() => {
-      setCursorVisible(prev => !prev);
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex < startupMessages.length) {
+        const { text, delay } = startupMessages[currentIndex];
+        setLines(prev => [...prev, `> ${text}`]);
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 600);
+
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev);
     }, 500);
 
     return () => {
-      clearTimeout(textTimer);
-      clearInterval(cursorTimer);
+      clearInterval(interval);
+      clearInterval(cursorInterval);
     };
-  }, [textIndex]);
+  }, []);
 
   return (
-    <div className="max-w-2xl mx-auto text-center">
-      <div className="flex justify-center mb-8">
-        <Shield className="h-24 w-24 text-emerald-500" />
+    <div className="w-full max-w-3xl bg-black border border-emerald-500/30 rounded-md overflow-hidden shadow-lg shadow-emerald-500/10">
+      <div className="bg-gray-900 border-b border-emerald-500/20 p-2 flex items-center gap-2">
+        <Terminal className="h-4 w-4 text-emerald-500" />
+        <span className="text-xs font-mono text-emerald-400">SENTINEL AGS - Security System Initialization</span>
       </div>
-      <h1 className="text-4xl font-bold mb-6 text-emerald-400 font-mono">SENTINEL AGS</h1>
-      <h2 className="text-2xl mb-12 text-gray-400 font-mono">Advanced Guardian System</h2>
-      
-      <div className="bg-gray-900 p-6 rounded-lg border border-emerald-800 font-mono text-left">
-        {startupTexts.slice(0, textIndex + 1).map((text, i) => (
-          <div key={i} className="mb-2">
-            <span className="text-emerald-400">{">"}</span>{" "}
-            <span className={i === textIndex ? "text-emerald-100" : "text-gray-500"}>
-              {text}
-              {i === textIndex && cursorVisible && <span className="text-emerald-400">_</span>}
-            </span>
-          </div>
+      <div className="p-4 font-mono text-xs">
+        {lines.map((line, i) => (
+          <div key={i} className="text-gray-300 mb-1">{line}</div>
         ))}
+        <div className="text-emerald-400 flex">
+          <span>{">"}</span>
+          <span className="w-2"></span>
+          <span className={showCursor ? "blink" : ""}>_</span>
+        </div>
       </div>
     </div>
   );

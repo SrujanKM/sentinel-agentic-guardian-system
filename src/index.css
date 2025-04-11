@@ -50,8 +50,8 @@
 
 /* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -85,4 +85,52 @@
 
 .bg-gray-850 {
   background-color: #1a2028;
+}
+
+/* Source-specific colors */
+.source-windows {
+  @apply border-l-2 border-blue-500;
+}
+
+.source-aws {
+  @apply border-l-2 border-orange-500;
+}
+
+.source-network {
+  @apply border-l-2 border-green-500;
+}
+
+.source-database {
+  @apply border-l-2 border-purple-500;
+}
+
+/* Ensure proper scrolling across all views */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) hsl(var(--muted));
+}
+
+/* Python syntax highlighting */
+.python-code {
+  @apply font-mono text-xs bg-gray-850 p-2 rounded;
+}
+
+.python-keyword {
+  @apply text-purple-400;
+}
+
+.python-string {
+  @apply text-green-400;
+}
+
+.python-comment {
+  @apply text-gray-500;
+}
+
+.python-function {
+  @apply text-blue-400;
+}
+
+.python-class {
+  @apply text-yellow-400;
 }

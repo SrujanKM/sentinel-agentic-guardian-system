@@ -28,7 +28,9 @@ const SystemMonitor = () => {
                   </div>
                   <span className="text-sm font-medium">38%</span>
                 </div>
-                <Progress value={38} className="h-1.5 bg-gray-700" indicatorClassName="bg-blue-500" />
+                <div className="relative w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <Progress value={38} className="h-full bg-blue-500" />
+                </div>
               </div>
               
               <div className="space-y-1">
@@ -39,7 +41,9 @@ const SystemMonitor = () => {
                   </div>
                   <span className="text-sm font-medium">64%</span>
                 </div>
-                <Progress value={64} className="h-1.5 bg-gray-700" indicatorClassName="bg-purple-500" />
+                <div className="relative w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <Progress value={64} className="h-full bg-purple-500" />
+                </div>
               </div>
               
               <div className="space-y-1">
@@ -50,7 +54,9 @@ const SystemMonitor = () => {
                   </div>
                   <span className="text-sm font-medium">26%</span>
                 </div>
-                <Progress value={26} className="h-1.5 bg-gray-700" indicatorClassName="bg-green-500" />
+                <div className="relative w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <Progress value={26} className="h-full bg-green-500" />
+                </div>
               </div>
             </div>
           </div>
@@ -68,7 +74,9 @@ const SystemMonitor = () => {
                   </div>
                   <span className="text-sm font-medium">94%</span>
                 </div>
-                <Progress value={94} className="h-1.5 bg-gray-700" indicatorClassName="bg-emerald-500" />
+                <div className="relative w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <Progress value={94} className="h-full bg-emerald-500" />
+                </div>
               </div>
               
               <div className="space-y-1">
@@ -79,7 +87,9 @@ const SystemMonitor = () => {
                   </div>
                   <span className="text-sm font-medium">42%</span>
                 </div>
-                <Progress value={42} className="h-1.5 bg-gray-700" indicatorClassName="bg-red-500" />
+                <div className="relative w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <Progress value={42} className="h-full bg-red-500" />
+                </div>
               </div>
               
               <div className="space-y-1">
@@ -90,7 +100,9 @@ const SystemMonitor = () => {
                   </div>
                   <span className="text-sm font-medium">18%</span>
                 </div>
-                <Progress value={18} className="h-1.5 bg-gray-700" indicatorClassName="bg-orange-500" />
+                <div className="relative w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <Progress value={18} className="h-full bg-orange-500" />
+                </div>
               </div>
             </div>
           </div>

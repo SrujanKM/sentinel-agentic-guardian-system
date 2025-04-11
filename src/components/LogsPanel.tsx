@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Filter, AlertTriangle, Info, TerminalSquare } from "lucide-react";
+import { Search, Filter, AlertTriangle, Info, TerminalSquare, Globe, Cloud, Server } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const LogsPanel = ({ logs }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,6 +24,36 @@ const LogsPanel = ({ logs }) => {
         return <Info className="h-4 w-4 text-blue-500 flex-shrink-0" />;
       default:
         return <TerminalSquare className="h-4 w-4 text-gray-500 flex-shrink-0" />;
+    }
+  };
+  
+  const getSourceBadge = (source) => {
+    const sourceType = source.toLowerCase();
+    if (sourceType.includes("windows")) {
+      return <Badge className="bg-blue-500/20 text-blue-400 border-blue-600 text-xs">Windows</Badge>;
+    } else if (sourceType.includes("aws") || sourceType.includes("cloud")) {
+      return <Badge className="bg-orange-500/20 text-orange-400 border-orange-600 text-xs">AWS</Badge>;
+    } else if (sourceType.includes("network") || sourceType.includes("firewall")) {
+      return <Badge className="bg-green-500/20 text-green-400 border-green-600 text-xs">Network</Badge>;
+    } else if (sourceType.includes("db") || sourceType.includes("database")) {
+      return <Badge className="bg-purple-500/20 text-purple-400 border-purple-600 text-xs">Database</Badge>;
+    } else {
+      return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500 text-xs">Other</Badge>;
+    }
+  };
+
+  const getSourceIcon = (source) => {
+    const sourceType = source.toLowerCase();
+    if (sourceType.includes("windows")) {
+      return <TerminalSquare className="h-3 w-3 text-blue-400" />;
+    } else if (sourceType.includes("aws") || sourceType.includes("cloud")) {
+      return <Cloud className="h-3 w-3 text-orange-400" />;
+    } else if (sourceType.includes("network") || sourceType.includes("firewall")) {
+      return <Globe className="h-3 w-3 text-green-400" />;
+    } else if (sourceType.includes("db") || sourceType.includes("database")) {
+      return <Server className="h-3 w-3 text-purple-400" />;
+    } else {
+      return <Info className="h-3 w-3 text-gray-400" />;
     }
   };
 
@@ -51,7 +82,7 @@ const LogsPanel = ({ logs }) => {
       </CardHeader>
       
       <CardContent className="p-0">
-        <ScrollArea className="h-[300px] p-2">
+        <ScrollArea className="h-[300px]">
           <div className="space-y-1 p-2">
             {filteredLogs.map((log, index) => (
               <div 
@@ -63,9 +94,17 @@ const LogsPanel = ({ logs }) => {
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between">
                       <span className="font-mono text-gray-400">{log.timestamp}</span>
-                      <span className="text-gray-500 truncate">{log.source}</span>
+                      <div className="flex items-center gap-1">
+                        {getSourceBadge(log.source)}
+                      </div>
                     </div>
                     <p className="text-white mt-1 break-words">{log.message}</p>
+                    <div className="flex justify-end mt-1 text-gray-500">
+                      <div className="flex items-center gap-1">
+                        {getSourceIcon(log.source)}
+                        <span className="truncate">{log.source}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
