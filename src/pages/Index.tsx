@@ -1,12 +1,37 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import Dashboard from "@/components/Dashboard";
+import SecurityHeader from "@/components/SecurityHeader";
+import StartupSequence from "@/components/StartupSequence";
 
 const Index = () => {
+  const [systemStarted, setSystemStarted] = React.useState(false);
+
+  const handleStartSystem = () => {
+    setSystemStarted(true);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      {!systemStarted ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <StartupSequence />
+          <div className="mt-8">
+            <Button 
+              onClick={handleStartSystem} 
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-mono py-2 px-6 rounded-md"
+            >
+              INITIALIZE SYSTEM
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <SecurityHeader />
+          <Dashboard />
+        </>
+      )}
     </div>
   );
 };
