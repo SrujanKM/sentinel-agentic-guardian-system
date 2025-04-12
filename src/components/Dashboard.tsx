@@ -7,6 +7,7 @@ import AgentStatus from "./AgentStatus";
 import LogsPanel from "./LogsPanel";
 import ThreatDetails from "./ThreatDetails";
 import BackendStatus from "./BackendStatus";
+import AnalyticsModule from "./analytics/AnalyticsModule";
 import { fetchLogs, fetchThreats } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -109,9 +110,7 @@ const Dashboard = () => {
             </TabsContent>
 
             <TabsContent value="analytics">
-              <div className="bg-gray-800 rounded-lg p-6 h-[300px] flex items-center justify-center">
-                <p className="text-gray-400">Analytics module will be available in the next update.</p>
-              </div>
+              <AnalyticsModule />
             </TabsContent>
           </Tabs>
         </div>

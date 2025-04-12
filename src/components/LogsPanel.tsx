@@ -3,13 +3,23 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Filter, AlertTriangle, Info, TerminalSquare, Globe, Cloud, Server } from "lucide-react";
+import { 
+  Search, Filter, AlertTriangle, Info, TerminalSquare, 
+  Globe, Cloud, Server, Database, Clock, Shield, 
+  RefreshCw 
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { fetchLogs } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 const LogsPanel = ({ logs = [] }) => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [localLogs, setLocalLogs] = useState(logs);
+  const [loading, setLoading] = useState(false);
+  const [filterLevel, setFilterLevel] = useState("");
+  const [filterSource, setFilterSource] = useState("");
   
   useEffect(() => {
     setLocalLogs(logs);
@@ -29,11 +39,38 @@ const LogsPanel = ({ logs = [] }) => {
     return () => clearInterval(refreshInterval);
   }, []);
   
-  const filteredLogs = localLogs.filter(log => 
-    log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.level.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      const newLogs = await fetchLogs();
+      setLocalLogs(newLogs);
+      toast({
+        title: "Logs Refreshed",
+        description: `Loaded ${newLogs.length} log entries`
+      });
+    } catch (error) {
+      console.error("Failed to refresh logs:", error);
+      toast({
+        title: "Refresh Failed",
+        description: "Could not refresh logs. Check console for details.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const filteredLogs = localLogs.filter(log => {
+    const matchesSearch = 
+      log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.level.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesLevel = filterLevel ? log.level === filterLevel : true;
+    const matchesSource = filterSource ? log.source.includes(filterSource) : true;
+    
+    return matchesSearch && matchesLevel && matchesSource;
+  });
 
   const getLogIcon = (level) => {
     switch (level.toLowerCase()) {
@@ -72,10 +109,78 @@ const LogsPanel = ({ logs = [] }) => {
     } else if (sourceType.includes("network") || sourceType.includes("firewall")) {
       return <Globe className="h-3 w-3 text-green-400" />;
     } else if (sourceType.includes("db") || sourceType.includes("database")) {
-      return <Server className="h-3 w-3 text-purple-400" />;
+      return <Database className="h-3 w-3 text-purple-400" />;
     } else {
       return <Info className="h-3 w-3 text-gray-400" />;
     }
+  };
+
+  const getLevelFilter = () => {
+    return (
+      <div className="flex flex-wrap gap-1 mt-2">
+        <Badge 
+          className={`cursor-pointer ${filterLevel === "" ? "bg-gray-700" : "bg-gray-800"}`}
+          onClick={() => setFilterLevel("")}
+        >
+          All
+        </Badge>
+        <Badge 
+          className={`cursor-pointer ${filterLevel === "info" ? "bg-blue-700" : "bg-gray-800"}`}
+          onClick={() => setFilterLevel("info")}
+        >
+          Info
+        </Badge>
+        <Badge 
+          className={`cursor-pointer ${filterLevel === "warning" ? "bg-yellow-700" : "bg-gray-800"}`}
+          onClick={() => setFilterLevel("warning")}
+        >
+          Warning
+        </Badge>
+        <Badge 
+          className={`cursor-pointer ${filterLevel === "error" ? "bg-red-700" : "bg-gray-800"}`}
+          onClick={() => setFilterLevel("error")}
+        >
+          Error
+        </Badge>
+      </div>
+    );
+  };
+  
+  const getSourceFilter = () => {
+    return (
+      <div className="flex flex-wrap gap-1 mt-2">
+        <Badge 
+          className={`cursor-pointer ${filterSource === "" ? "bg-gray-700" : "bg-gray-800"}`}
+          onClick={() => setFilterSource("")}
+        >
+          All
+        </Badge>
+        <Badge 
+          className={`cursor-pointer ${filterSource === "Windows" ? "bg-blue-700" : "bg-gray-800"}`}
+          onClick={() => setFilterSource("Windows")}
+        >
+          Windows
+        </Badge>
+        <Badge 
+          className={`cursor-pointer ${filterSource === "AWS" ? "bg-orange-700" : "bg-gray-800"}`}
+          onClick={() => setFilterSource("AWS")}
+        >
+          AWS
+        </Badge>
+        <Badge 
+          className={`cursor-pointer ${filterSource === "Network" ? "bg-green-700" : "bg-gray-800"}`}
+          onClick={() => setFilterSource("Network")}
+        >
+          Network
+        </Badge>
+        <Badge 
+          className={`cursor-pointer ${filterSource === "Database" ? "bg-purple-700" : "bg-gray-800"}`}
+          onClick={() => setFilterSource("Database")}
+        >
+          Database
+        </Badge>
+      </div>
+    );
   };
 
   return (
@@ -83,9 +188,21 @@ const LogsPanel = ({ logs = [] }) => {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">System Logs</CardTitle>
-          <div className="flex items-center gap-1 text-xs text-gray-400">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            Live
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 gap-1 text-gray-400 hover:text-white"
+              onClick={handleRefresh}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+              <span>Refresh</span>
+            </Button>
+            <div className="flex items-center gap-1 text-xs text-gray-400">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              Live
+            </div>
           </div>
         </div>
         <div className="relative mt-2">
@@ -100,6 +217,9 @@ const LogsPanel = ({ logs = [] }) => {
             <Filter className="h-4 w-4 text-gray-500" />
           </button>
         </div>
+        
+        {getLevelFilter()}
+        {getSourceFilter()}
       </CardHeader>
       
       <CardContent className="p-0">
@@ -108,20 +228,42 @@ const LogsPanel = ({ logs = [] }) => {
             {filteredLogs.length > 0 ? (
               filteredLogs.map((log, index) => (
                 <div 
-                  key={index} 
+                  key={log.id || index} 
                   className="text-xs p-2 rounded bg-gray-800 hover:bg-gray-750 transition-colors"
                 >
                   <div className="flex items-start gap-2">
                     {getLogIcon(log.level)}
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between">
-                        <span className="font-mono text-gray-400">{log.timestamp}</span>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-3 w-3 text-gray-400" />
+                          <span className="font-mono text-gray-400">
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-1">
                           {getSourceBadge(log.source)}
+                          {log.details?.related_threat && (
+                            <Badge className="bg-red-500/20 text-red-400 border-red-600 text-xs">Threat</Badge>
+                          )}
                         </div>
                       </div>
                       <p className="text-white mt-1 break-words">{log.message}</p>
-                      <div className="flex justify-end mt-1 text-gray-500">
+                      <div className="flex justify-between mt-1 text-gray-500">
+                        <div className="flex items-center gap-1">
+                          {log.details?.user && (
+                            <div className="flex items-center gap-1 mr-2">
+                              <User className="h-3 w-3" />
+                              <span>{log.details.user}</span>
+                            </div>
+                          )}
+                          {log.details?.ip_address && (
+                            <div className="flex items-center gap-1">
+                              <Globe className="h-3 w-3" />
+                              <span>{log.details.ip_address}</span>
+                            </div>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1">
                           {getSourceIcon(log.source)}
                           <span className="truncate">{log.source}</span>
@@ -133,7 +275,9 @@ const LogsPanel = ({ logs = [] }) => {
               ))
             ) : (
               <div className="flex items-center justify-center h-[250px] text-gray-500">
-                {searchTerm ? "No logs match your search" : "No logs available"}
+                {searchTerm || filterLevel || filterSource ? 
+                  "No logs match your search criteria" : 
+                  "No logs available"}
               </div>
             )}
           </div>

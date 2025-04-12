@@ -1,23 +1,36 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Shield, Lock, Server, User, AlertCircle } from "lucide-react";
+import { 
+  AlertTriangle, Shield, Lock, Server, User, 
+  AlertCircle, ExternalLink, CheckCircle, Clock, 
+  RefreshCw, Filter
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { triggerAction } from "@/services/api";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("all");
   
   // Map threat type to icon
   const getThreatIcon = (type) => {
-    switch (type.toLowerCase()) {
+    switch (type?.toLowerCase()) {
       case "malware":
         return <AlertTriangle className="h-5 w-5 text-red-500" />;
       case "brute force":
         return <Lock className="h-5 w-5 text-orange-500" />;
       case "unauthorized access":
         return <User className="h-5 w-5 text-yellow-500" />;
+      case "privilege escalation":
+        return <Shield className="h-5 w-5 text-purple-500" />;
+      case "data exfiltration":
+        return <Server className="h-5 w-5 text-blue-500" />;
       case "anomaly":
         return <AlertCircle className="h-5 w-5 text-blue-500" />;
       default:
@@ -27,7 +40,7 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
 
   // Map severity to color
   const getSeverityColor = (severity) => {
-    switch (severity.toLowerCase()) {
+    switch (severity?.toLowerCase()) {
       case "critical":
         return "bg-red-500/20 text-red-500 border-red-500";
       case "high":
@@ -43,6 +56,11 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
 
   const handleThreatDetail = (threat) => {
     onThreatSelect(threat);
+    
+    toast({
+      title: "Threat Details",
+      description: `Viewing details for: ${threat.title}`,
+    });
   };
 
   const handleViewAll = () => {
@@ -50,20 +68,218 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
       title: "Switching to Threats Tab",
       description: "Showing all threats in the system",
     });
-    // This would typically switch to the threats tab in a real implementation
+    
+    // Find and click the threats tab
+    const threatsTab = document.querySelector('[value="threats"]');
+    if (threatsTab) {
+      (threatsTab as HTMLElement).click();
+    }
   };
+  
+  const handleRefresh = async () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      toast({
+        title: "Threats Refreshed",
+        description: "Latest threat information loaded",
+      });
+    }, 800);
+  };
+  
+  const handleResolveThreat = async (e, threat) => {
+    e.stopPropagation();
+    
+    try {
+      const response = await triggerAction({
+        action_type: "resolve_threat",
+        threat_id: threat.id,
+        details: {
+          resolution: "manually_resolved",
+          notes: "Marked as resolved by analyst"
+        }
+      });
+      
+      toast({
+        title: "Threat Resolved",
+        description: `${threat.title} has been marked as resolved`,
+      });
+      
+      // Update the threat status locally
+      threat.status = "resolved";
+      
+    } catch (error) {
+      console.error("Failed to resolve threat:", error);
+      toast({
+        title: "Action Failed",
+        description: "Could not resolve the threat. See console for details.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const getTimeAgo = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (seconds < 60) return `${seconds} seconds ago`;
+    
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} minutes ago`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hours ago`;
+    
+    const days = Math.floor(hours / 24);
+    return `${days} days ago`;
+  };
+  
+  // Filter threats
+  const filteredThreats = threats.filter(threat => {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "active") return threat.status === "active";
+    if (activeFilter === "resolved") return threat.status === "resolved";
+    if (activeFilter === "critical") return threat.severity === "critical";
+    if (activeFilter === "high") return threat.severity === "high";
+    return threat.type === activeFilter;
+  });
 
   return (
     <Card className="bg-gray-900 border-gray-800 shadow-lg">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-red-500" />
-          Threat Timeline
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            Threat Timeline
+          </CardTitle>
+          
+          <div className="flex gap-2 items-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 gap-1 text-gray-400 hover:text-white"
+              onClick={handleRefresh}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+              <span>Refresh</span>
+            </Button>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 gap-1 text-gray-400 hover:text-white">
+                  <Filter className="h-3 w-3" />
+                  <span>Filter</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2 bg-gray-900 border-gray-800">
+                <Tabs defaultValue="status" className="w-[200px]">
+                  <TabsList className="grid grid-cols-2">
+                    <TabsTrigger value="status">Status</TabsTrigger>
+                    <TabsTrigger value="type">Type</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="status" className="space-y-1 mt-2">
+                    <Button 
+                      variant={activeFilter === "all" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("all")}
+                    >
+                      All
+                    </Button>
+                    <Button 
+                      variant={activeFilter === "active" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("active")}
+                    >
+                      Active
+                    </Button>
+                    <Button 
+                      variant={activeFilter === "resolved" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("resolved")}
+                    >
+                      Resolved
+                    </Button>
+                    <Button 
+                      variant={activeFilter === "critical" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("critical")}
+                    >
+                      Critical
+                    </Button>
+                    <Button 
+                      variant={activeFilter === "high" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("high")}
+                    >
+                      High
+                    </Button>
+                  </TabsContent>
+                  <TabsContent value="type" className="space-y-1 mt-2">
+                    <Button 
+                      variant={activeFilter === "malware" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("malware")}
+                    >
+                      Malware
+                    </Button>
+                    <Button 
+                      variant={activeFilter === "brute force" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("brute force")}
+                    >
+                      Brute Force
+                    </Button>
+                    <Button 
+                      variant={activeFilter === "unauthorized access" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("unauthorized access")}
+                    >
+                      Unauthorized Access
+                    </Button>
+                    <Button 
+                      variant={activeFilter === "privilege escalation" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("privilege escalation")}
+                    >
+                      Privilege Escalation
+                    </Button>
+                    <Button 
+                      variant={activeFilter === "data exfiltration" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("data exfiltration")}
+                    >
+                      Data Exfiltration
+                    </Button>
+                    <Button 
+                      variant={activeFilter === "anomaly" ? "default" : "ghost"} 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => setActiveFilter("anomaly")}
+                    >
+                      Anomaly
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {threats.slice(0, expanded ? undefined : 5).map((threat) => (
+          {filteredThreats.slice(0, expanded ? undefined : 5).map((threat) => (
             <div 
               key={threat.id} 
               className="relative pl-6 border-l border-gray-700 pb-4 last:pb-0"
@@ -81,11 +297,22 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h4 className="font-medium text-white">{threat.title}</h4>
-                    <div className="text-xs text-gray-400">{threat.timestamp}</div>
+                    <div className="text-xs text-gray-400 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {getTimeAgo(threat.timestamp)}
+                    </div>
                   </div>
-                  <Badge className={`${getSeverityColor(threat.severity)} border`}>
-                    {threat.severity}
-                  </Badge>
+                  <div className="flex items-center gap-1">
+                    {threat.status === "resolved" ? (
+                      <Badge className="bg-green-500/20 text-green-500 border-green-500">
+                        Resolved
+                      </Badge>
+                    ) : (
+                      <Badge className={`${getSeverityColor(threat.severity)} border`}>
+                        {threat.severity}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm text-gray-300 mb-2">{threat.description}</p>
                 <div className="flex items-center justify-between">
@@ -93,23 +320,51 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
                     <Server className="h-3 w-3" />
                     <span>{threat.source}</span>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs text-emerald-400 hover:text-emerald-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleThreatDetail(threat);
-                    }}
-                  >
-                    Details
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {threat.status !== "resolved" && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs text-emerald-400 hover:text-emerald-300 h-7 px-2"
+                        onClick={(e) => handleResolveThreat(e, threat)}
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Resolve
+                      </Button>
+                    )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs text-blue-400 hover:text-blue-300 h-7 px-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleThreatDetail(threat);
+                      }}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      Details
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
           
-          {!expanded && threats.length > 5 && (
+          {filteredThreats.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-6 text-gray-500">
+              <Shield className="h-16 w-16 mb-2 text-gray-700" />
+              <p>No threats match the selected filter</p>
+              <Button 
+                variant="ghost" 
+                className="mt-2"
+                onClick={() => setActiveFilter("all")}
+              >
+                Show all threats
+              </Button>
+            </div>
+          )}
+          
+          {!expanded && filteredThreats.length > 5 && (
             <Button 
               variant="ghost" 
               className="w-full text-gray-400 hover:text-white"
