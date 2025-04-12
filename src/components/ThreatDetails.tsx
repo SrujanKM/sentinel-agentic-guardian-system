@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +13,11 @@ const ThreatDetails = ({ selectedThreat }) => {
   const [isResolved, setIsResolved] = useState(false);
 
   // Reset state when a different threat is selected
-  React.useEffect(() => {
-    setIsResolved(selectedThreat?.status === "resolved");
-    setIsResolving(false);
+  useEffect(() => {
+    if (selectedThreat) {
+      setIsResolved(selectedThreat.status === "resolved");
+      setIsResolving(false);
+    }
   }, [selectedThreat?.id]);
 
   if (!selectedThreat) {
@@ -132,7 +134,7 @@ const ThreatDetails = ({ selectedThreat }) => {
           <div className="flex items-center gap-1 text-gray-400">
             <Clock className="h-3 w-3" />
             <span>Detected: </span>
-            <span className="text-white">{selectedThreat.timestamp}</span>
+            <span className="text-white">{new Date(selectedThreat.timestamp).toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-1 text-gray-400">
             <Server className="h-3 w-3" />

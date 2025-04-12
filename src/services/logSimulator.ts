@@ -27,6 +27,15 @@ interface SimulatedThreat {
   details?: Record<string, any>;
 }
 
+interface ThreatPattern {
+  type: string;
+  title: string;
+  description: string;
+  severity: string;
+  source: string;
+  indicators: string[];
+}
+
 // Windows event sources and event IDs
 const windowsEventSources = [
   "Windows-Security",
@@ -77,7 +86,7 @@ const windowsSecurityEvents = [
   { id: 1102, description: "The audit log was cleared", level: "error" }
 ];
 
-const threatPatterns = [
+const threatPatterns: ThreatPattern[] = [
   {
     type: "brute force",
     title: "Brute Force Attack Detected",
@@ -164,7 +173,6 @@ class WindowsEventLogSimulator {
         users[Math.floor(Math.random() * users.length)],
         generateRandomIP()
       );
-      this.activeThreats.push(threat);
       
       this.previousThreatTypes.set(type as string, Date.now());
     });
@@ -483,13 +491,19 @@ class WindowsEventLogSimulator {
       details = {
         ip_address: ip,
         failed_attempts: Math.floor(Math.random() * 10) + 5,
-        time_window_minutes: Math.floor(Math.random() * 10) + 1
+        time_window_minutes: Math.floor(Math.random() * 10) + 1,
+        response_time_seconds: Math.floor(Math.random() * 50) + 5
       };
     } else if (type === "malware") {
       details = {
         malware_name: ["Trojan.Generic", "Ransomware.Cryptolocker", "Backdoor.Bot", "Exploit.PDF"][Math.floor(Math.random() * 4)],
         file_path: filePath || "C:\\Users\\Administrator\\Downloads\\invoice.exe",
-        hash: "a1b2c3d4e5f6" + Math.random().toString(36).substring(2, 10)
+        hash: "a1b2c3d4e5f6" + Math.random().toString(36).substring(2, 10),
+        response_time_seconds: Math.floor(Math.random() * 30) + 5
+      };
+    } else {
+      details = {
+        response_time_seconds: Math.floor(Math.random() * 120) + 10
       };
     }
     
@@ -545,9 +559,10 @@ class WindowsEventLogSimulator {
       return (now - lastAdded) > 180000;
     });
     
-    if (availableTypes.length > 0) {
-      const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-      this.createNewThreat(type, users[Math.floor(Math.random() * users.length)], generateRandomIP());
+    if (availableTypes.length > 0 && Math.random() < 0.1) {
+      const typeIndex = Math.floor(Math.random() * availableTypes.length);
+      const threatType = availableTypes[typeIndex].type;
+      this.createNewThreat(threatType, users[Math.floor(Math.random() * users.length)], generateRandomIP());
     }
     
     return this.activeThreats;

@@ -68,10 +68,26 @@ const Dashboard = () => {
     // Set up a refresh interval for data (less frequent to reduce unnecessary refreshes)
     const refreshInterval = setInterval(() => {
       loadData();
-    }, 60000); // Every 60 seconds instead of 30
+    }, 60000); // Every 60 seconds
 
-    // Clean up the interval when component unmounts
-    return () => clearInterval(refreshInterval);
+    // Fix for settings menu bug: ensure click events work properly after Popover dialogs close
+    const restorePointerEvents = () => {
+      document.body.style.pointerEvents = 'auto';
+      const modals = document.querySelectorAll('[role="dialog"]');
+      modals.forEach(modal => {
+        if (modal.parentElement) {
+          modal.parentElement.style.pointerEvents = 'auto';
+        }
+      });
+    };
+    
+    document.addEventListener('click', restorePointerEvents);
+
+    // Clean up the interval and event listener when component unmounts
+    return () => {
+      clearInterval(refreshInterval);
+      document.removeEventListener('click', restorePointerEvents);
+    };
   }, [toast]);
 
   const handleTabChange = (value) => {

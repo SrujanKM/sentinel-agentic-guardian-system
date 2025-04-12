@@ -1,22 +1,26 @@
+
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   AlertTriangle, Shield, Lock, Server, User, 
   AlertCircle, ExternalLink, CheckCircle, Clock, 
-  RefreshCw, Filter
+  RefreshCw, Filter, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { triggerAction } from "@/services/api";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+const THREATS_PER_PAGE = 5;
+
 const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [resolvedThreats, setResolvedThreats] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(0);
   
   const getThreatIcon = (type) => {
     switch (type?.toLowerCase()) {
@@ -142,6 +146,15 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
       );
     });
 
+  // Pagination calculation
+  const totalPages = Math.ceil(sortedThreats.length / THREATS_PER_PAGE);
+  const paginatedThreats = expanded 
+    ? sortedThreats
+    : sortedThreats.slice(
+        currentPage * THREATS_PER_PAGE, 
+        (currentPage + 1) * THREATS_PER_PAGE
+      );
+
   return (
     <Card className="bg-gray-900 border-gray-800 shadow-lg">
       <CardHeader className="pb-2">
@@ -149,6 +162,11 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
           <CardTitle className="text-lg flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-500" />
             Threat Timeline
+            {!expanded && sortedThreats.length > 0 && (
+              <Badge variant="outline" className="ml-2">
+                {sortedThreats.length} total
+              </Badge>
+            )}
           </CardTitle>
           
           <div className="flex gap-2 items-center">
@@ -275,81 +293,81 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {sortedThreats.slice(0, expanded ? undefined : 5).map((threat) => (
-            <div 
-              key={threat.id} 
-              className="relative pl-6 border-l border-gray-700 pb-4 last:pb-0"
-            >
-              <div className="absolute left-[-8px] top-0 w-4 h-4 rounded-full border-2 border-gray-700 bg-gray-900 flex items-center justify-center">
-                {getThreatIcon(threat.type)}
-              </div>
-              
+        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+          {paginatedThreats.length > 0 ? (
+            paginatedThreats.map((threat) => (
               <div 
-                className="bg-gray-800 rounded-md p-3 hover:bg-gray-750 transition-colors cursor-pointer"
-                onClick={() => handleThreatDetail(threat)}
+                key={threat.id} 
+                className="relative pl-6 border-l border-gray-700 pb-4 last:pb-0"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-medium text-white">{threat.title}</h4>
-                    <div className="text-xs text-gray-400 flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {getTimeAgo(threat.timestamp)}
+                <div className="absolute left-[-8px] top-0 w-4 h-4 rounded-full border-2 border-gray-700 bg-gray-900 flex items-center justify-center">
+                  {getThreatIcon(threat.type)}
+                </div>
+                
+                <div 
+                  className="bg-gray-800 rounded-md p-3 hover:bg-gray-750 transition-colors cursor-pointer"
+                  onClick={() => handleThreatDetail(threat)}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-medium text-white">{threat.title}</h4>
+                      <div className="text-xs text-gray-400 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {getTimeAgo(threat.timestamp)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {threat.status === "resolved" ? (
+                        <Badge className="bg-green-500/20 text-green-500 border-green-500">
+                          Resolved
+                        </Badge>
+                      ) : (
+                        <Badge className={`${getSeverityColor(threat.severity)} border`}>
+                          {threat.severity}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    {threat.status === "resolved" ? (
-                      <Badge className="bg-green-500/20 text-green-500 border-green-500">
-                        Resolved
-                      </Badge>
-                    ) : (
-                      <Badge className={`${getSeverityColor(threat.severity)} border`}>
-                        {threat.severity}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <p className="text-sm text-gray-300 mb-2">{threat.description}</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <Server className="h-3 w-3" />
-                    <span>{threat.source}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {threat.status !== "resolved" && (
+                  <p className="text-sm text-gray-300 mb-2">{threat.description}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                      <Server className="h-3 w-3" />
+                      <span>{threat.source}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {threat.status !== "resolved" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className={`text-xs h-7 px-2 ${
+                            resolvedThreats.has(threat.id) 
+                              ? "bg-green-600 hover:bg-green-700 text-white" 
+                              : "border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                          }`}
+                          onClick={(e) => handleResolveThreat(e, threat)}
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Resolve
+                        </Button>
+                      )}
                       <Button 
-                        variant="outline" 
+                        variant="ghost" 
                         size="sm" 
-                        className={`text-xs h-7 px-2 ${
-                          resolvedThreats.has(threat.id) 
-                            ? "bg-green-600 hover:bg-green-700 text-white" 
-                            : "border-blue-500 text-blue-400 hover:bg-blue-500/10"
-                        }`}
-                        onClick={(e) => handleResolveThreat(e, threat)}
+                        className="text-xs text-blue-400 hover:text-blue-300 h-7 px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleThreatDetail(threat);
+                        }}
                       >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Resolve
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Details
                       </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-xs text-blue-400 hover:text-blue-300 h-7 px-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleThreatDetail(threat);
-                      }}
-                    >
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      Details
-                    </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-          
-          {sortedThreats.length === 0 && (
+            ))
+          ) : (
             <div className="flex flex-col items-center justify-center py-6 text-gray-500">
               <Shield className="h-16 w-16 mb-2 text-gray-700" />
               <p>No threats match the selected filter</p>
@@ -364,6 +382,34 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
           )}
         </div>
       </CardContent>
+      
+      {!expanded && totalPages > 1 && (
+        <CardFooter className="flex justify-between items-center pt-2 pb-3">
+          <div className="text-xs text-gray-400">
+            Showing {currentPage * THREATS_PER_PAGE + 1}-{Math.min((currentPage + 1) * THREATS_PER_PAGE, sortedThreats.length)} of {sortedThreats.length}
+          </div>
+          <div className="flex gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+              disabled={currentPage === 0}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+              disabled={currentPage >= totalPages - 1}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardFooter>
+      )}
     </Card>
   );
 };
