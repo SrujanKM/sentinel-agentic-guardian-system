@@ -4,7 +4,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { AlertTriangle, Lock, User, Shield, Server, AlertCircle } from "lucide-react";
 
-const ThreatDistribution = ({ data, loading }) => {
+interface ThreatDistributionProps {
+  data: any[];
+  loading: boolean;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: any[];
+}
+
+interface LegendProps {
+  payload?: Array<{
+    value: string;
+    color: string;
+  }>;
+}
+
+const ThreatDistribution: React.FC<ThreatDistributionProps> = ({ data, loading }) => {
   // Process the data
   const processData = () => {
     // Count threats by type
@@ -59,7 +76,8 @@ const ThreatDistribution = ({ data, loading }) => {
   };
   
   // Custom legend
-  const CustomLegend = ({ payload }) => {
+  const CustomLegend: React.FC<LegendProps> = ({ payload }) => {
+    if (!payload) return null;
     return (
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2">
         {payload.map((entry, index) => (
@@ -79,7 +97,7 @@ const ThreatDistribution = ({ data, loading }) => {
   };
   
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }) => {
+  const CustomTooltip: React.FC<TooltipProps> = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-gray-800 border border-gray-700 p-2 rounded-md shadow-md text-xs">

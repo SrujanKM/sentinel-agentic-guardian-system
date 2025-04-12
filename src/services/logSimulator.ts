@@ -161,7 +161,11 @@ class WindowsEventLogSimulator {
     const threatCount = Math.floor(Math.random() * 3) + 3;
     
     for (let i = 0; i < threatCount; i++) {
-      const threat = this.generateThreat();
+      const threat = this.createNewThreat(
+        threatPatterns[Math.floor(Math.random() * threatPatterns.length)].type,
+        users[Math.floor(Math.random() * users.length)],
+        generateRandomIP()
+      );
       this.activeThreats.push(threat);
     }
   }

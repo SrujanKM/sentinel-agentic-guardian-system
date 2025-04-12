@@ -2,11 +2,31 @@
 import React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const DetectionTimeline = ({ data, loading }) => {
+interface DetectionTimelineProps {
+  data: any[];
+  loading: boolean;
+}
+
+interface TimeSeriesItem {
+  time: string;
+  threats: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+}
+
+const DetectionTimeline: React.FC<DetectionTimelineProps> = ({ data, loading }) => {
   // Process the data
   const processData = () => {
     // Group threats by day or hour depending on the data span
-    const timeSeries = {};
+    const timeSeries: Record<string, TimeSeriesItem> = {};
     
     data.forEach(threat => {
       // Parse the timestamp
@@ -55,8 +75,8 @@ const DetectionTimeline = ({ data, loading }) => {
       const dateA = new Date(a.time);
       const dateB = new Date(b.time);
       
-      if (!isNaN(dateA) && !isNaN(dateB)) {
-        return dateA - dateB;
+      if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
+        return dateA.getTime() - dateB.getTime();
       }
       
       // If not valid dates, sort as strings
@@ -67,7 +87,7 @@ const DetectionTimeline = ({ data, loading }) => {
   const chartData = processData();
   
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip: React.FC<TooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-gray-800 border border-gray-700 p-2 rounded-md shadow-md text-xs">

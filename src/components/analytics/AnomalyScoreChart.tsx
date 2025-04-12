@@ -2,7 +2,18 @@
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const AnomalyScoreChart = ({ data, loading }) => {
+interface AnomalyScoreChartProps {
+  data: any[];
+  loading: boolean;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+}
+
+const AnomalyScoreChart: React.FC<AnomalyScoreChartProps> = ({ data, loading }) => {
   // Process the data
   const processData = () => {
     // Create buckets for anomaly scores
@@ -35,7 +46,7 @@ const AnomalyScoreChart = ({ data, loading }) => {
   const chartData = processData();
   
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip: React.FC<TooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-gray-800 border border-gray-700 p-2 rounded-md shadow-md text-xs">

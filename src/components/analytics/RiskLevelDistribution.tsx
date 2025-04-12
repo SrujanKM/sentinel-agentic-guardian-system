@@ -3,7 +3,24 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
-const RiskLevelDistribution = ({ data, loading }) => {
+interface RiskLevelDistributionProps {
+  data: any[];
+  loading: boolean;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: any[];
+}
+
+interface LegendProps {
+  payload?: Array<{
+    value: string;
+    color: string;
+  }>;
+}
+
+const RiskLevelDistribution: React.FC<RiskLevelDistributionProps> = ({ data, loading }) => {
   // Process the data
   const processData = () => {
     // Count threats by severity
@@ -41,7 +58,7 @@ const RiskLevelDistribution = ({ data, loading }) => {
   };
   
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }) => {
+  const CustomTooltip: React.FC<TooltipProps> = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const color = COLORS[payload[0].name] || '#6b7280';
       return (
@@ -65,7 +82,8 @@ const RiskLevelDistribution = ({ data, loading }) => {
   };
   
   // Custom legend
-  const CustomLegend = ({ payload }) => {
+  const CustomLegend: React.FC<LegendProps> = ({ payload }) => {
+    if (!payload) return null;
     return (
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2">
         {payload.map((entry, index) => (

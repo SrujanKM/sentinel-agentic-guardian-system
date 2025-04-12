@@ -1,9 +1,20 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
-const SourceBreakdown = ({ data, loading }) => {
+interface SourceBreakdownProps {
+  data: any[];
+  loading: boolean;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+}
+
+const SourceBreakdown: React.FC<SourceBreakdownProps> = ({ data, loading }) => {
   // Process the data
   const processData = () => {
     // Group logs by source type
@@ -50,7 +61,7 @@ const SourceBreakdown = ({ data, loading }) => {
   };
   
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip: React.FC<TooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const color = COLORS[label] || '#6b7280';
       return (

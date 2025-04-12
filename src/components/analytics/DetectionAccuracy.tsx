@@ -5,7 +5,12 @@ import { Progress } from "@/components/ui/progress";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 
-const DetectionAccuracy = ({ data, loading }) => {
+interface DetectionAccuracyProps {
+  data: any[];
+  loading: boolean;
+}
+
+const DetectionAccuracy: React.FC<DetectionAccuracyProps> = ({ data, loading }) => {
   // Calculate metrics
   const calculateMetrics = () => {
     const total = data.length;
@@ -103,7 +108,7 @@ const DetectionAccuracy = ({ data, loading }) => {
                       <span className="text-xs text-gray-400">False Positives</span>
                       <span className="text-xs font-medium text-red-400">{metrics.falsePositives}</span>
                     </div>
-                    <Progress value={metrics.falsePositive} className="h-2 bg-gray-700" indicatorColor="bg-red-500" />
+                    <Progress value={metrics.falsePositive} className="h-2 bg-gray-700" />
                   </div>
                 </div>
               </div>
