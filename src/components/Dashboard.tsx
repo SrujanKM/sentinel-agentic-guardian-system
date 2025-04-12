@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("overview");
   
   const handleThreatSelect = (threat) => {
     setSelectedThreat(threat);
@@ -29,7 +30,7 @@ const Dashboard = () => {
         setLoading(true);
         const [threatsData, logsData] = await Promise.all([
           fetchThreats(),
-          fetchLogs()
+          fetchLogs({ limit: 20 }) // Reduce the number of logs fetched to avoid clutter
         ]);
         
         setThreats(threatsData);
@@ -40,8 +41,9 @@ const Dashboard = () => {
         
         // Load mock data if API fails
         import("@/data/mockData").then(({ mockThreats, mockLogs }) => {
-          setThreats(mockThreats);
-          setLogs(mockLogs);
+          // Reduce mock data size to avoid clutter
+          setThreats(mockThreats.slice(0, 15));
+          setLogs(mockLogs.slice(0, 20));
           
           toast({
             title: "Using Mock Data",
@@ -56,14 +58,18 @@ const Dashboard = () => {
 
     loadData();
 
-    // Set up a refresh interval for data (every 30 seconds)
+    // Set up a refresh interval for data (less frequent to reduce unnecessary refreshes)
     const refreshInterval = setInterval(() => {
       loadData();
-    }, 30000);
+    }, 60000); // Every 60 seconds instead of 30
 
     // Clean up the interval when component unmounts
     return () => clearInterval(refreshInterval);
   }, [toast]);
+
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+  };
 
   return (
     <div className="flex-1 container mx-auto p-4 overflow-hidden">
@@ -76,7 +82,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-12 gap-4 h-[calc(100vh-72px)]">
         {/* Main Content */}
         <div className="col-span-12 lg:col-span-8 space-y-4 overflow-y-auto pr-2">
-          <Tabs defaultValue="overview" className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid grid-cols-5 mb-4">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="threats">Threats</TabsTrigger>

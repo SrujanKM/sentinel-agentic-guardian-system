@@ -17,6 +17,7 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [resolvedThreats, setResolvedThreats] = useState(new Set());
   
   // Map threat type to icon
   const getThreatIcon = (type) => {
@@ -56,19 +57,9 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
 
   const handleThreatDetail = (threat) => {
     onThreatSelect(threat);
-    
-    toast({
-      title: "Threat Details",
-      description: `Viewing details for: ${threat.title}`,
-    });
   };
 
   const handleViewAll = () => {
-    toast({
-      title: "Switching to Threats Tab",
-      description: "Showing all threats in the system",
-    });
-    
     // Find and click the threats tab
     const threatsTab = document.querySelector('[value="threats"]');
     if (threatsTab) {
@@ -91,6 +82,9 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
     e.stopPropagation();
     
     try {
+      // Update the local state to show the button as resolved immediately
+      setResolvedThreats(prev => new Set(prev).add(threat.id));
+      
       const response = await triggerAction({
         action_type: "resolve_threat",
         threat_id: threat.id,
@@ -100,19 +94,21 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
         }
       });
       
-      toast({
-        title: "Threat Resolved",
-        description: `${threat.title} has been marked as resolved`,
-      });
-      
       // Update the threat status locally
       threat.status = "resolved";
       
     } catch (error) {
       console.error("Failed to resolve threat:", error);
+      // Remove from resolved set if API call fails
+      setResolvedThreats(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(threat.id);
+        return newSet;
+      });
+      
       toast({
         title: "Action Failed",
-        description: "Could not resolve the threat. See console for details.",
+        description: "Could not resolve the threat. Please try again.",
         variant: "destructive",
       });
     }
@@ -143,6 +139,11 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
     if (activeFilter === "critical") return threat.severity === "critical";
     if (activeFilter === "high") return threat.severity === "high";
     return threat.type === activeFilter;
+  });
+
+  // Sort threats by timestamp (newest first)
+  const sortedThreats = [...filteredThreats].sort((a, b) => {
+    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
   });
 
   return (
@@ -279,7 +280,7 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {filteredThreats.slice(0, expanded ? undefined : 5).map((threat) => (
+          {sortedThreats.slice(0, expanded ? undefined : 5).map((threat) => (
             <div 
               key={threat.id} 
               className="relative pl-6 border-l border-gray-700 pb-4 last:pb-0"
@@ -323,9 +324,13 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
                   <div className="flex items-center gap-1">
                     {threat.status !== "resolved" && (
                       <Button 
-                        variant="ghost" 
+                        variant={resolvedThreats.has(threat.id) ? "default" : "outline"} 
                         size="sm" 
-                        className="text-xs text-emerald-400 hover:text-emerald-300 h-7 px-2"
+                        className={`text-xs h-7 px-2 ${
+                          resolvedThreats.has(threat.id) 
+                            ? "bg-green-600 hover:bg-green-700 text-white" 
+                            : "border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                        }`}
                         onClick={(e) => handleResolveThreat(e, threat)}
                       >
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -350,7 +355,7 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
             </div>
           ))}
           
-          {filteredThreats.length === 0 && (
+          {sortedThreats.length === 0 && (
             <div className="flex flex-col items-center justify-center py-6 text-gray-500">
               <Shield className="h-16 w-16 mb-2 text-gray-700" />
               <p>No threats match the selected filter</p>
@@ -366,8 +371,8 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
           
           {!expanded && filteredThreats.length > 5 && (
             <Button 
-              variant="ghost" 
-              className="w-full text-gray-400 hover:text-white"
+              variant="secondary" 
+              className="w-full mt-2 bg-gray-800 hover:bg-gray-750"
               onClick={handleViewAll}
             >
               View All Threats

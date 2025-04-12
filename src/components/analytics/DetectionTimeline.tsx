@@ -23,12 +23,25 @@ interface TooltipProps {
 }
 
 const DetectionTimeline: React.FC<DetectionTimelineProps> = ({ data, loading }) => {
-  // Process the data
+  // Process the data with reduced frequency
   const processData = () => {
     // Group threats by day or hour depending on the data span
     const timeSeries: Record<string, TimeSeriesItem> = {};
     
-    data.forEach(threat => {
+    // Sort data by timestamp
+    const sortedData = [...data].sort((a, b) => {
+      return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+    });
+    
+    // Reduce frequency by sampling - take one entry for each hour or day
+    // instead of processing every threat
+    let sampledData = sortedData;
+    if (sortedData.length > 20) {
+      const sampleStep = Math.ceil(sortedData.length / 20);
+      sampledData = sortedData.filter((_, index) => index % sampleStep === 0);
+    }
+    
+    sampledData.forEach(threat => {
       // Parse the timestamp
       const date = new Date(threat.timestamp);
       
@@ -40,9 +53,10 @@ const DetectionTimeline: React.FC<DetectionTimelineProps> = ({ data, loading }) 
       yesterday.setDate(yesterday.getDate() - 1);
       
       if (date > yesterday) {
-        // Format as hour
-        timeKey = date.toLocaleTimeString([], { hour: '2-digit', hour12: false });
-        timeKey = `${timeKey}:00`;
+        // Format as hour, but use 2-hour intervals to reduce clutter
+        const hour = date.getHours();
+        const normalizedHour = Math.floor(hour / 2) * 2;
+        timeKey = `${normalizedHour.toString().padStart(2, '0')}:00`;
       } else {
         // Format as day
         timeKey = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -144,6 +158,7 @@ const DetectionTimeline: React.FC<DetectionTimelineProps> = ({ data, loading }) 
               angle={-45}
               textAnchor="end"
               height={60}
+              interval={"preserveStartEnd"}
             />
             <YAxis 
               tick={{ fill: '#9ca3af' }} 

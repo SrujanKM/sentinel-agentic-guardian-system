@@ -1,13 +1,16 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, ShieldAlert, ArrowRightCircle, CheckCircle, Clock, Server, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { triggerAction } from "@/services/api";
 
 const ThreatDetails = ({ selectedThreat }) => {
   const { toast } = useToast();
+  const [isResolving, setIsResolving] = useState(false);
+  const [isResolved, setIsResolved] = useState(false);
 
   if (!selectedThreat) {
     return (
@@ -40,27 +43,73 @@ const ThreatDetails = ({ selectedThreat }) => {
     }
   };
 
-  const handleRespondButton = () => {
-    toast({
-      title: "Response Initiated",
-      description: `Automated response to ${selectedThreat.title} has been triggered.`,
-    });
+  const handleRespondButton = async () => {
+    try {
+      await triggerAction({
+        action_type: "respond_to_threat",
+        threat_id: selectedThreat.id,
+        details: {
+          action: "automated_response",
+          notes: "Triggered by analyst"
+        }
+      });
+      
+      toast({
+        title: "Response Initiated",
+        description: `Automated response to ${selectedThreat.title} has been triggered.`,
+      });
+    } catch (error) {
+      console.error("Failed to trigger response:", error);
+      toast({
+        title: "Action Failed",
+        description: "Could not initiate response. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleMarkAsResolved = () => {
-    toast({
-      title: "Threat Resolved",
-      description: `${selectedThreat.title} has been marked as resolved.`,
-    });
+  const handleMarkAsResolved = async () => {
+    setIsResolving(true);
+    
+    try {
+      await triggerAction({
+        action_type: "resolve_threat",
+        threat_id: selectedThreat.id,
+        details: {
+          resolution: "manually_resolved",
+          notes: "Marked as resolved by analyst"
+        }
+      });
+      
+      // Update local state
+      setIsResolved(true);
+      selectedThreat.status = "resolved";
+      
+      toast({
+        title: "Threat Resolved",
+        description: `${selectedThreat.title} has been marked as resolved.`,
+      });
+    } catch (error) {
+      console.error("Failed to resolve threat:", error);
+      toast({
+        title: "Action Failed",
+        description: "Could not resolve the threat. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResolving(false);
+    }
   };
+
+  const resolvedStatus = isResolved || selectedThreat.status === "resolved";
 
   return (
     <Card className="bg-gray-900 border-gray-800">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{selectedThreat.title}</CardTitle>
-          <Badge className={getStatusColor(selectedThreat.status)}>
-            {selectedThreat.status}
+          <Badge className={getStatusColor(resolvedStatus ? "resolved" : selectedThreat.status)}>
+            {resolvedStatus ? "Resolved" : selectedThreat.status}
           </Badge>
         </div>
       </CardHeader>
@@ -124,16 +173,27 @@ const ThreatDetails = ({ selectedThreat }) => {
             size="sm" 
             className="bg-emerald-600 hover:bg-emerald-700 flex-1"
             onClick={handleRespondButton}
+            disabled={resolvedStatus}
           >
             Respond
           </Button>
           <Button 
             size="sm" 
-            variant="outline" 
-            className="flex-1 border-gray-700 text-gray-300"
+            variant={resolvedStatus ? "default" : "outline"} 
+            className={`flex-1 ${
+              resolvedStatus 
+                ? "bg-green-600 hover:bg-green-700 text-white" 
+                : "border-blue-500 text-blue-400 hover:bg-blue-500/10"
+            }`}
             onClick={handleMarkAsResolved}
+            disabled={resolvedStatus || isResolving}
           >
-            Mark as Resolved
+            {isResolving ? "Processing..." : (
+              <>
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Mark as Resolved
+              </>
+            )}
           </Button>
         </div>
       </CardContent>
