@@ -12,6 +12,12 @@ const ThreatDetails = ({ selectedThreat }) => {
   const [isResolving, setIsResolving] = useState(false);
   const [isResolved, setIsResolved] = useState(false);
 
+  // Reset state when a different threat is selected
+  React.useEffect(() => {
+    setIsResolved(selectedThreat?.status === "resolved");
+    setIsResolving(false);
+  }, [selectedThreat?.id]);
+
   if (!selectedThreat) {
     return (
       <Card className="bg-gray-900 border-gray-800 h-[400px]">
@@ -81,7 +87,7 @@ const ThreatDetails = ({ selectedThreat }) => {
         }
       });
       
-      // Update local state
+      // Update local state for THIS threat only
       setIsResolved(true);
       selectedThreat.status = "resolved";
       
@@ -101,15 +107,15 @@ const ThreatDetails = ({ selectedThreat }) => {
     }
   };
 
-  const resolvedStatus = isResolved || selectedThreat.status === "resolved";
+  const currentThreatResolved = isResolved || selectedThreat.status === "resolved";
 
   return (
     <Card className="bg-gray-900 border-gray-800">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{selectedThreat.title}</CardTitle>
-          <Badge className={getStatusColor(resolvedStatus ? "resolved" : selectedThreat.status)}>
-            {resolvedStatus ? "Resolved" : selectedThreat.status}
+          <Badge className={getStatusColor(currentThreatResolved ? "resolved" : selectedThreat.status)}>
+            {currentThreatResolved ? "Resolved" : selectedThreat.status}
           </Badge>
         </div>
       </CardHeader>
@@ -173,20 +179,20 @@ const ThreatDetails = ({ selectedThreat }) => {
             size="sm" 
             className="bg-emerald-600 hover:bg-emerald-700 flex-1"
             onClick={handleRespondButton}
-            disabled={resolvedStatus}
+            disabled={currentThreatResolved}
           >
             Respond
           </Button>
           <Button 
             size="sm" 
-            variant={resolvedStatus ? "default" : "outline"} 
+            variant={currentThreatResolved ? "default" : "outline"} 
             className={`flex-1 ${
-              resolvedStatus 
+              currentThreatResolved 
                 ? "bg-green-600 hover:bg-green-700 text-white" 
                 : "border-blue-500 text-blue-400 hover:bg-blue-500/10"
             }`}
             onClick={handleMarkAsResolved}
-            disabled={resolvedStatus || isResolving}
+            disabled={currentThreatResolved || isResolving}
           >
             {isResolving ? "Processing..." : (
               <>

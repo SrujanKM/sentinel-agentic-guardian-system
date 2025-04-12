@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +18,6 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [resolvedThreats, setResolvedThreats] = useState(new Set());
   
-  // Map threat type to icon
   const getThreatIcon = (type) => {
     switch (type?.toLowerCase()) {
       case "malware":
@@ -39,7 +37,6 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
     }
   };
 
-  // Map severity to color
   const getSeverityColor = (severity) => {
     switch (severity?.toLowerCase()) {
       case "critical":
@@ -58,14 +55,6 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
   const handleThreatDetail = (threat) => {
     onThreatSelect(threat);
   };
-
-  const handleViewAll = () => {
-    // Find and click the threats tab
-    const threatsTab = document.querySelector('[value="threats"]');
-    if (threatsTab) {
-      (threatsTab as HTMLElement).click();
-    }
-  };
   
   const handleRefresh = async () => {
     setLoading(true);
@@ -82,7 +71,6 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
     e.stopPropagation();
     
     try {
-      // Update the local state to show the button as resolved immediately
       setResolvedThreats(prev => new Set(prev).add(threat.id));
       
       const response = await triggerAction({
@@ -94,12 +82,10 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
         }
       });
       
-      // Update the threat status locally
       threat.status = "resolved";
       
     } catch (error) {
       console.error("Failed to resolve threat:", error);
-      // Remove from resolved set if API call fails
       setResolvedThreats(prev => {
         const newSet = new Set(prev);
         newSet.delete(threat.id);
@@ -131,7 +117,6 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
     return `${days} days ago`;
   };
   
-  // Filter threats
   const filteredThreats = threats.filter(threat => {
     if (activeFilter === "all") return true;
     if (activeFilter === "active") return threat.status === "active";
@@ -141,10 +126,21 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
     return threat.type === activeFilter;
   });
 
-  // Sort threats by timestamp (newest first)
-  const sortedThreats = [...filteredThreats].sort((a, b) => {
-    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-  });
+  const sortedThreats = [...filteredThreats]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .filter((threat, index, array) => {
+      if (index === 0) return true;
+      
+      const prevThreat = array[index - 1];
+      const timeDiff = Math.abs(new Date(threat.timestamp).getTime() - new Date(prevThreat.timestamp).getTime());
+      
+      return !(
+        threat.type === prevThreat.type && 
+        timeDiff < 120000 && 
+        threat.description === prevThreat.description && 
+        threat.source === prevThreat.source
+      );
+    });
 
   return (
     <Card className="bg-gray-900 border-gray-800 shadow-lg">
@@ -174,7 +170,7 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
                   <span>Filter</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-2 bg-gray-900 border-gray-800">
+              <PopoverContent className="w-auto p-2 bg-gray-900 border-gray-800 z-50">
                 <Tabs defaultValue="status" className="w-[200px]">
                   <TabsList className="grid grid-cols-2">
                     <TabsTrigger value="status">Status</TabsTrigger>
@@ -285,12 +281,10 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
               key={threat.id} 
               className="relative pl-6 border-l border-gray-700 pb-4 last:pb-0"
             >
-              {/* Timeline node */}
               <div className="absolute left-[-8px] top-0 w-4 h-4 rounded-full border-2 border-gray-700 bg-gray-900 flex items-center justify-center">
                 {getThreatIcon(threat.type)}
               </div>
               
-              {/* Timeline content */}
               <div 
                 className="bg-gray-800 rounded-md p-3 hover:bg-gray-750 transition-colors cursor-pointer"
                 onClick={() => handleThreatDetail(threat)}
@@ -324,7 +318,7 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
                   <div className="flex items-center gap-1">
                     {threat.status !== "resolved" && (
                       <Button 
-                        variant={resolvedThreats.has(threat.id) ? "default" : "outline"} 
+                        variant="outline" 
                         size="sm" 
                         className={`text-xs h-7 px-2 ${
                           resolvedThreats.has(threat.id) 
@@ -367,16 +361,6 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
                 Show all threats
               </Button>
             </div>
-          )}
-          
-          {!expanded && filteredThreats.length > 5 && (
-            <Button 
-              variant="secondary" 
-              className="w-full mt-2 bg-gray-800 hover:bg-gray-750"
-              onClick={handleViewAll}
-            >
-              View All Threats
-            </Button>
           )}
         </div>
       </CardContent>

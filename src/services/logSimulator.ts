@@ -37,28 +37,24 @@ const windowsEventSources = [
   "Windows-Defender/Operational"
 ];
 
-// AWS event sources
 const awsEventSources = [
   "AWS-CloudTrail",
   "AWS-GuardDuty",
   "AWS-SecurityHub"
 ];
 
-// Network event sources
 const networkEventSources = [
   "Network-Firewall",
   "Network-IDS",
   "Network-Router"
 ];
 
-// Database event sources
 const databaseEventSources = [
   "Database-MySQL",
   "Database-PostgreSQL",
   "Database-SQLServer"
 ];
 
-// Common Windows security event IDs and their meanings
 const windowsSecurityEvents = [
   { id: 4624, description: "Successful account login", level: "info" },
   { id: 4625, description: "Failed account login attempt", level: "warning" },
@@ -81,7 +77,6 @@ const windowsSecurityEvents = [
   { id: 1102, description: "The audit log was cleared", level: "error" }
 ];
 
-// Common threat patterns
 const threatPatterns = [
   {
     type: "brute force",
@@ -133,13 +128,11 @@ const threatPatterns = [
   }
 ];
 
-// User simulation
 const users = [
   "administrator", "system", "john.doe", "sarah.smith", "helpdesk",
   "backup_svc", "dev_user", "web_admin", "db_admin", "guest"
 ];
 
-// IP address simulation
 const generateRandomIP = () => {
   return `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
 };
@@ -148,34 +141,39 @@ class WindowsEventLogSimulator {
   private lastSimulatedTime: Date;
   private recentLogs: SimulatedLog[] = [];
   private activeThreats: SimulatedThreat[] = [];
+  private previousThreatTypes: Map<string, number> = new Map();
 
   constructor() {
     this.lastSimulatedTime = new Date();
     
-    // Initialize with some active threats
     this.generateInitialThreats();
   }
 
   private generateInitialThreats(): void {
-    // Generate 3-5 initial threats
     const threatCount = Math.floor(Math.random() * 3) + 3;
+    const threatTypes = ["brute force", "malware", "unauthorized access", "privilege escalation", "data exfiltration", "anomaly"];
     
-    for (let i = 0; i < threatCount; i++) {
+    const selectedTypes = new Set();
+    while (selectedTypes.size < Math.min(threatCount, threatTypes.length)) {
+      selectedTypes.add(threatTypes[Math.floor(Math.random() * threatTypes.length)]);
+    }
+    
+    Array.from(selectedTypes).forEach(type => {
       const threat = this.createNewThreat(
-        threatPatterns[Math.floor(Math.random() * threatPatterns.length)].type,
+        type as string,
         users[Math.floor(Math.random() * users.length)],
         generateRandomIP()
       );
       this.activeThreats.push(threat);
-    }
+      
+      this.previousThreatTypes.set(type as string, Date.now());
+    });
   }
 
   public generateLogs(count: number = 10): SimulatedLog[] {
     const newLogs: SimulatedLog[] = [];
     
-    // Generate standard logs
     for (let i = 0; i < count; i++) {
-      // 10% chance of generating a threat-related log
       const isThreatLog = Math.random() < 0.1;
       
       if (isThreatLog) {
@@ -184,32 +182,28 @@ class WindowsEventLogSimulator {
         newLogs.push(this.generateNormalLog());
       }
       
-      // Advance time by 1-5 seconds for each log
       this.lastSimulatedTime = new Date(this.lastSimulatedTime.getTime() + (Math.random() * 4000 + 1000));
     }
     
-    // Keep the most recent 100 logs
     this.recentLogs = [...newLogs, ...this.recentLogs].slice(0, 100);
     
     return newLogs;
   }
 
   private generateNormalLog(): SimulatedLog {
-    // Determine source type with weighted distribution
     const sourceType = Math.random();
     let source;
     
-    if (sourceType < 0.6) { // 60% Windows events
+    if (sourceType < 0.6) {
       source = windowsEventSources[Math.floor(Math.random() * windowsEventSources.length)];
-    } else if (sourceType < 0.8) { // 20% AWS events
+    } else if (sourceType < 0.8) {
       source = awsEventSources[Math.floor(Math.random() * awsEventSources.length)];
-    } else if (sourceType < 0.9) { // 10% Network events
+    } else if (sourceType < 0.9) {
       source = networkEventSources[Math.floor(Math.random() * networkEventSources.length)];
-    } else { // 10% Database events
+    } else {
       source = databaseEventSources[Math.floor(Math.random() * databaseEventSources.length)];
     }
     
-    // For Windows Security logs, use real event IDs
     if (source === "Windows-Security") {
       const event = windowsSecurityEvents[Math.floor(Math.random() * windowsSecurityEvents.length)];
       const user = users[Math.floor(Math.random() * users.length)];
@@ -231,7 +225,6 @@ class WindowsEventLogSimulator {
       };
     } 
     
-    // For other sources, generate appropriate logs
     if (source.includes("AWS")) {
       const actions = ["ListBuckets", "GetObject", "PutObject", "CreateUser", "AssumeRole"];
       const regions = ["us-east-1", "us-west-2", "eu-west-1"];
@@ -299,7 +292,6 @@ class WindowsEventLogSimulator {
       };
     }
     
-    // Default case (Windows System or Application)
     const messages = [
       "Service started successfully",
       "Application launched",
@@ -322,7 +314,6 @@ class WindowsEventLogSimulator {
   }
 
   private generateThreatLog(): SimulatedLog {
-    // If we have active threats, 80% chance to generate a log related to an existing threat
     if (this.activeThreats.length > 0 && Math.random() < 0.8) {
       const threat = this.activeThreats[Math.floor(Math.random() * this.activeThreats.length)];
       
@@ -362,7 +353,6 @@ class WindowsEventLogSimulator {
         };
       }
       
-      // Generic threat log for other threat types
       return {
         id: uuidv4(),
         timestamp: this.lastSimulatedTime.toISOString(),
@@ -376,14 +366,12 @@ class WindowsEventLogSimulator {
       };
     }
     
-    // Otherwise, generate a new potential threat log that could lead to a new threat
     const threatEvent = Math.random();
     
-    if (threatEvent < 0.3) { // 30% failed login attempts
+    if (threatEvent < 0.3) {
       const user = users[Math.floor(Math.random() * users.length)];
       const ip = generateRandomIP();
       
-      // 10% chance to create new brute force threat
       if (Math.random() < 0.1) {
         this.createNewThreat("brute force", user, ip);
       }
@@ -403,7 +391,7 @@ class WindowsEventLogSimulator {
       };
     }
     
-    if (threatEvent < 0.6) { // 30% suspicious file/process activity
+    if (threatEvent < 0.6) {
       const filePaths = [
         "C:\\Users\\Administrator\\Downloads\\invoice.pdf.exe",
         "C:\\Program Files\\Temp\\svchost.exe",
@@ -412,7 +400,6 @@ class WindowsEventLogSimulator {
       ];
       const filePath = filePaths[Math.floor(Math.random() * filePaths.length)];
       
-      // 10% chance to create new malware threat
       if (Math.random() < 0.1) {
         this.createNewThreat("malware", users[Math.floor(Math.random() * users.length)], generateRandomIP(), filePath);
       }
@@ -432,7 +419,6 @@ class WindowsEventLogSimulator {
       };
     }
     
-    // 40% other suspicious activities
     const suspiciousActivities = [
       {
         source: "Windows-Security",
@@ -469,7 +455,6 @@ class WindowsEventLogSimulator {
     
     const activity = suspiciousActivities[Math.floor(Math.random() * suspiciousActivities.length)];
     
-    // 10% chance to create a new random type of threat
     if (Math.random() < 0.1) {
       const threatTypes = ["unauthorized access", "privilege escalation", "data exfiltration", "anomaly"];
       this.createNewThreat(
@@ -490,10 +475,8 @@ class WindowsEventLogSimulator {
   }
 
   private createNewThreat(type: string, user?: string, ip?: string, filePath?: string): SimulatedThreat {
-    // Find the matching threat pattern
     const pattern = threatPatterns.find(p => p.type === type) || threatPatterns[0];
     
-    // Create additional details based on threat type
     let details: Record<string, any> = {};
     
     if (type === "brute force") {
@@ -510,9 +493,10 @@ class WindowsEventLogSimulator {
       };
     }
     
-    // Create new threat
+    const uniqueId = uuidv4();
+    
     const threat: SimulatedThreat = {
-      id: uuidv4(),
+      id: uniqueId,
       title: pattern.title,
       description: pattern.description,
       timestamp: this.lastSimulatedTime.toISOString(),
@@ -522,12 +506,13 @@ class WindowsEventLogSimulator {
       type: pattern.type,
       indicators: [...pattern.indicators],
       related_logs: [],
-      anomaly_score: Math.random() * 0.5 + 0.5, // 0.5 to 1.0
+      anomaly_score: Math.random() * 0.5 + 0.5,
       user,
       details
     };
     
-    // Add to active threats
+    this.previousThreatTypes.set(type, Date.now());
+    
     this.activeThreats.push(threat);
     
     return threat;
@@ -538,13 +523,10 @@ class WindowsEventLogSimulator {
   }
 
   public getThreats(): SimulatedThreat[] {
-    // Update timestamps for more realism
     this.activeThreats.forEach(threat => {
-      // Only update some threats each time to keep them staggered
       if (Math.random() < 0.3) {
         const age = new Date().getTime() - new Date(threat.timestamp).getTime();
         
-        // If threat is older than 30 minutes, 20% chance to resolve it
         if (age > 30 * 60 * 1000 && Math.random() < 0.2) {
           threat.status = "resolved";
           threat.actions = ["Blocked", "Quarantined", "Alert sent"];
@@ -552,16 +534,19 @@ class WindowsEventLogSimulator {
       }
     });
     
-    // Filter out old resolved threats
     this.activeThreats = this.activeThreats.filter(threat => {
       const age = new Date().getTime() - new Date(threat.timestamp).getTime();
-      return threat.status === "active" || age < 60 * 60 * 1000; // Keep active or resolved less than 1 hour ago
+      return threat.status === "active" || age < 60 * 60 * 1000;
     });
     
-    // 5% chance to add a new random threat
-    if (Math.random() < 0.05) {
-      const threatTypes = ["brute force", "malware", "unauthorized access", "privilege escalation", "data exfiltration", "anomaly"];
-      const type = threatTypes[Math.floor(Math.random() * threatTypes.length)];
+    const now = Date.now();
+    const availableTypes = threatPatterns.filter(p => {
+      const lastAdded = this.previousThreatTypes.get(p.type) || 0;
+      return (now - lastAdded) > 180000;
+    });
+    
+    if (availableTypes.length > 0) {
+      const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
       this.createNewThreat(type, users[Math.floor(Math.random() * users.length)], generateRandomIP());
     }
     
@@ -569,7 +554,6 @@ class WindowsEventLogSimulator {
   }
 }
 
-// Singleton instance
 const logSimulator = new WindowsEventLogSimulator();
 
 export default logSimulator;

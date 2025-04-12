@@ -24,6 +24,13 @@ const Dashboard = () => {
     setSelectedThreat(threat);
   };
 
+  // Reset selected threat when changing to a tab where it wouldn't be visible
+  useEffect(() => {
+    if (activeTab !== "overview" && activeTab !== "threats") {
+      setSelectedThreat(null);
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     const loadData = async () => {
       try {
