@@ -16,13 +16,15 @@ from models.schemas import LogEntry, Threat, ActionRequest, SystemStats
 from services.log_collector import LogCollector
 from services.anomaly_detector import AnomalyDetector
 from services.response_manager import ResponseManager
+from services.credentials_manager import credentials_manager
+from routes.credentials import router as credentials_router
 
 # Configure logger
 logger.add("logs/sentinel.log", rotation="500 MB", retention="10 days", level="INFO")
 
 app = FastAPI(
-    title="SENTINEL AGS - Security System API",
-    description="Intelligent security system powered by Agentic AI for monitoring and responding to threats",
+    title="SENTINEL AGS - Azure Security System API",
+    description="Intelligent security system powered by Agentic AI for monitoring and responding to Azure cloud threats",
     version="1.0.0"
 )
 
@@ -35,6 +37,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include routers
+app.include_router(credentials_router)
+
 # Initialize services
 log_collector = LogCollector()
 anomaly_detector = AnomalyDetector()
@@ -46,6 +51,10 @@ async def startup_event():
     await init_db()
     logger.info("Database initialized")
     
+    # Check credentials on startup
+    cred_status = credentials_manager.get_credentials_status()
+    logger.info(f"Credentials status: Azure present: {cred_status['azure']['present']}, Gemini present: {cred_status['gemini']['present']}")
+    
     # Start background task for log collection and analysis
     asyncio.create_task(background_analysis_task())
     logger.info("Background analysis task started")
@@ -56,14 +65,16 @@ async def background_analysis_task():
         try:
             logger.info("Running background analysis task")
             
-            # Collect new logs from Windows Event Log (if on Windows)
-            if os.name == 'nt':  # Windows check
-                new_logs = await log_collector.collect_windows_events()
-                logger.info(f"Collected {len(new_logs)} new Windows event logs")
+            # Check if Azure credentials are available
+            azure_creds = credentials_manager.load_azure_credentials()
             
-            # Generate simulated logs for testing
-            sim_logs = await log_collector.generate_simulated_logs(count=5)
-            logger.info(f"Generated {len(sim_logs)} simulated logs")
+            if azure_creds:
+                # TODO: Collect real Azure logs using credentials
+                logger.info("Azure credentials found, would collect real logs here")
+            else:
+                # Generate simulated logs for testing
+                sim_logs = await log_collector.generate_simulated_logs(count=5)
+                logger.info(f"Generated {len(sim_logs)} simulated logs")
             
             # Get recent logs from database
             db = next(get_db())
@@ -73,6 +84,11 @@ async def background_analysis_task():
             if recent_logs:
                 anomalies = await anomaly_detector.detect_anomalies(recent_logs)
                 logger.info(f"Detected {len(anomalies)} anomalies")
+                
+                # Check if Gemini API is available for enhanced analysis
+                gemini_key = credentials_manager.load_gemini_api_key()
+                if gemini_key and anomalies:
+                    logger.info("Would use Gemini API for enhanced threat analysis here")
                 
                 # Respond to detected threats
                 if anomalies:
@@ -89,7 +105,7 @@ async def background_analysis_task():
 
 @app.get("/")
 async def root():
-    return {"message": "SENTINEL AGS - Security System API is running"}
+    return {"message": "SENTINEL AGS - Azure Security System API is running"}
 
 @app.get("/logs", response_model=List[LogEntry])
 async def get_logs(

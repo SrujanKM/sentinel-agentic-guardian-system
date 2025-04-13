@@ -15,6 +15,19 @@ interface TooltipProps {
   label?: string;
 }
 
+interface ResponseTimeItem {
+  type: string;
+  label: string;
+  times: number[];
+}
+
+interface ChartDataItem {
+  type: string;
+  label: string;
+  avgTime: number;
+  count: number;
+}
+
 const ResponseTimeAnalysis: React.FC<ResponseTimeAnalysisProps> = ({ data, loading }) => {
   // Process the threats to extract response time data
   const chartData = useMemo(() => {
@@ -40,7 +53,7 @@ const ResponseTimeAnalysis: React.FC<ResponseTimeAnalysisProps> = ({ data, loadi
     }
     
     // Group threats by type and calculate average response time
-    const responseTimeByType = {};
+    const responseTimeByType: Record<string, ResponseTimeItem> = {};
     
     threatsWithResponse.forEach(threat => {
       const type = threat.type;
@@ -61,7 +74,7 @@ const ResponseTimeAnalysis: React.FC<ResponseTimeAnalysisProps> = ({ data, loadi
     });
     
     // Calculate averages and counts
-    return Object.values(responseTimeByType).map(item => {
+    return Object.values(responseTimeByType).map((item: ResponseTimeItem): ChartDataItem => {
       const times = item.times;
       return {
         type: item.type,

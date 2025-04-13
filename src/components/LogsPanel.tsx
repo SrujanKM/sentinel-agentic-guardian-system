@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  Search, Filter, AlertTriangle, Info, TerminalSquare, 
-  Globe, Cloud, Server, Database, Clock, Shield, 
-  RefreshCw, User
+  Search, Filter, AlertTriangle, Info, Cloud, 
+  Server, Database, Clock, Shield, 
+  RefreshCw, User, Lock, Key, HardDrive
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,35 +81,43 @@ const LogsPanel = ({ logs = [] }) => {
       case "info":
         return <Info className="h-4 w-4 text-blue-500 flex-shrink-0" />;
       default:
-        return <TerminalSquare className="h-4 w-4 text-gray-500 flex-shrink-0" />;
+        return <Info className="h-4 w-4 text-gray-500 flex-shrink-0" />;
     }
   };
   
   const getSourceBadge = (source) => {
     const sourceType = source.toLowerCase();
-    if (sourceType.includes("windows")) {
-      return <Badge className="bg-blue-500/20 text-blue-400 border-blue-600 text-xs">Windows</Badge>;
-    } else if (sourceType.includes("aws") || sourceType.includes("cloud")) {
-      return <Badge className="bg-orange-500/20 text-orange-400 border-orange-600 text-xs">AWS</Badge>;
-    } else if (sourceType.includes("network") || sourceType.includes("firewall")) {
+    if (sourceType.includes("activedirectory")) {
+      return <Badge className="bg-blue-500/20 text-blue-400 border-blue-600 text-xs">Azure AD</Badge>;
+    } else if (sourceType.includes("securitycenter")) {
+      return <Badge className="bg-red-500/20 text-red-400 border-red-600 text-xs">Security</Badge>;
+    } else if (sourceType.includes("network")) {
       return <Badge className="bg-green-500/20 text-green-400 border-green-600 text-xs">Network</Badge>;
-    } else if (sourceType.includes("db") || sourceType.includes("database")) {
-      return <Badge className="bg-purple-500/20 text-purple-400 border-purple-600 text-xs">Database</Badge>;
+    } else if (sourceType.includes("keyvault")) {
+      return <Badge className="bg-purple-500/20 text-purple-400 border-purple-600 text-xs">Key Vault</Badge>;
+    } else if (sourceType.includes("virtualmachines")) {
+      return <Badge className="bg-orange-500/20 text-orange-400 border-orange-600 text-xs">VM</Badge>;
+    } else if (sourceType.includes("storage")) {
+      return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-600 text-xs">Storage</Badge>;
     } else {
-      return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500 text-xs">Other</Badge>;
+      return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500 text-xs">Azure</Badge>;
     }
   };
 
   const getSourceIcon = (source) => {
     const sourceType = source.toLowerCase();
-    if (sourceType.includes("windows")) {
-      return <TerminalSquare className="h-3 w-3 text-blue-400" />;
-    } else if (sourceType.includes("aws") || sourceType.includes("cloud")) {
-      return <Cloud className="h-3 w-3 text-orange-400" />;
-    } else if (sourceType.includes("network") || sourceType.includes("firewall")) {
-      return <Globe className="h-3 w-3 text-green-400" />;
-    } else if (sourceType.includes("db") || sourceType.includes("database")) {
-      return <Database className="h-3 w-3 text-purple-400" />;
+    if (sourceType.includes("activedirectory")) {
+      return <User className="h-3 w-3 text-blue-400" />;
+    } else if (sourceType.includes("securitycenter")) {
+      return <Shield className="h-3 w-3 text-red-400" />;
+    } else if (sourceType.includes("network")) {
+      return <Cloud className="h-3 w-3 text-green-400" />;
+    } else if (sourceType.includes("keyvault")) {
+      return <Key className="h-3 w-3 text-purple-400" />;
+    } else if (sourceType.includes("virtualmachines")) {
+      return <Server className="h-3 w-3 text-orange-400" />;
+    } else if (sourceType.includes("storage")) {
+      return <Database className="h-3 w-3 text-cyan-400" />;
     } else {
       return <Info className="h-3 w-3 text-gray-400" />;
     }
@@ -156,28 +164,28 @@ const LogsPanel = ({ logs = [] }) => {
           All
         </Badge>
         <Badge 
-          className={`cursor-pointer ${filterSource === "Windows" ? "bg-blue-700" : "bg-gray-800"}`}
-          onClick={() => setFilterSource("Windows")}
+          className={`cursor-pointer ${filterSource === "ActiveDirectory" ? "bg-blue-700" : "bg-gray-800"}`}
+          onClick={() => setFilterSource("ActiveDirectory")}
         >
-          Windows
+          Azure AD
         </Badge>
         <Badge 
-          className={`cursor-pointer ${filterSource === "AWS" ? "bg-orange-700" : "bg-gray-800"}`}
-          onClick={() => setFilterSource("AWS")}
+          className={`cursor-pointer ${filterSource === "SecurityCenter" ? "bg-red-700" : "bg-gray-800"}`}
+          onClick={() => setFilterSource("SecurityCenter")}
         >
-          AWS
+          Security
         </Badge>
         <Badge 
-          className={`cursor-pointer ${filterSource === "Network" ? "bg-green-700" : "bg-gray-800"}`}
-          onClick={() => setFilterSource("Network")}
+          className={`cursor-pointer ${filterSource === "VirtualMachines" ? "bg-orange-700" : "bg-gray-800"}`}
+          onClick={() => setFilterSource("VirtualMachines")}
         >
-          Network
+          VMs
         </Badge>
         <Badge 
-          className={`cursor-pointer ${filterSource === "Database" ? "bg-purple-700" : "bg-gray-800"}`}
-          onClick={() => setFilterSource("Database")}
+          className={`cursor-pointer ${filterSource === "KeyVault" ? "bg-purple-700" : "bg-gray-800"}`}
+          onClick={() => setFilterSource("KeyVault")}
         >
-          Database
+          Key Vault
         </Badge>
       </div>
     );
@@ -187,7 +195,7 @@ const LogsPanel = ({ logs = [] }) => {
     <Card className="bg-gray-900 border-gray-800">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">System Logs</CardTitle>
+          <CardTitle className="text-lg">Azure Logs</CardTitle>
           <div className="flex items-center gap-2">
             <Button 
               variant="ghost" 
@@ -259,8 +267,14 @@ const LogsPanel = ({ logs = [] }) => {
                           )}
                           {log.details?.ip_address && (
                             <div className="flex items-center gap-1">
-                              <Globe className="h-3 w-3" />
+                              <Cloud className="h-3 w-3" />
                               <span>{log.details.ip_address}</span>
+                            </div>
+                          )}
+                          {log.details?.resource_id && (
+                            <div className="flex items-center gap-1">
+                              <HardDrive className="h-3 w-3" />
+                              <span>{log.details.resource_id.split('/').pop()}</span>
                             </div>
                           )}
                         </div>

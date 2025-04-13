@@ -1,12 +1,17 @@
 
 import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from "recharts";
-import { Activity, PieChart } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Activity } from "lucide-react";
 
 interface SourceActivityTimelineProps {
   data: any[];
   loading: boolean;
+}
+
+interface TimeSeriesItem {
+  time: string;
+  [key: string]: string | number;
 }
 
 interface TooltipProps {
@@ -21,7 +26,7 @@ const SourceActivityTimeline: React.FC<SourceActivityTimelineProps> = ({ data, l
     if (!data || data.length === 0) return [];
     
     // Create a map of timestamps to source counts
-    const timeMap = new Map();
+    const timeMap = new Map<string, TimeSeriesItem>();
     
     // Calculate time range
     const timestamps = data.map(log => new Date(log.timestamp).getTime());
@@ -31,6 +36,9 @@ const SourceActivityTimeline: React.FC<SourceActivityTimelineProps> = ({ data, l
     
     // Determine appropriate time bucket (hour or day)
     const useHourly = timeRange < 24 * 60 * 60 * 1000; // Less than 24 hours
+    
+    // Define Azure sources to track
+    const azureSources = ["ActiveDirectory", "SecurityCenter", "VirtualMachines", "KeyVault", "Network", "Storage"];
     
     // Group logs by time buckets
     data.forEach(log => {
@@ -46,45 +54,42 @@ const SourceActivityTimeline: React.FC<SourceActivityTimelineProps> = ({ data, l
       }
       
       if (!timeMap.has(timeKey)) {
-        timeMap.set(timeKey, {
+        const entry: TimeSeriesItem = {
           time: timeKey,
-          Windows: 0,
-          AWS: 0,
-          Network: 0,
-          Database: 0,
-          Other: 0,
           total: 0,
           error: 0,
           warning: 0,
           info: 0
+        };
+        
+        // Initialize all Azure sources with zero
+        azureSources.forEach(source => {
+          entry[source] = 0;
         });
+        
+        timeMap.set(timeKey, entry);
       }
       
-      const entry = timeMap.get(timeKey);
-      entry.total++;
+      const entry = timeMap.get(timeKey)!;
+      entry.total = (entry.total as number) + 1;
       
       // Increment source type
       const source = log.source || "";
-      if (source.includes("Windows")) {
-        entry.Windows++;
-      } else if (source.includes("AWS") || source.includes("Cloud")) {
-        entry.AWS++;
-      } else if (source.includes("Network") || source.includes("Firewall")) {
-        entry.Network++;
-      } else if (source.includes("Database") || source.includes("DB")) {
-        entry.Database++;
-      } else {
-        entry.Other++;
+      for (const azureSource of azureSources) {
+        if (source.includes(azureSource)) {
+          entry[azureSource] = (entry[azureSource] as number || 0) + 1;
+          break;
+        }
       }
       
       // Increment severity level
       const level = log.level || "info";
       if (level === "error") {
-        entry.error++;
+        entry.error = (entry.error as number) + 1;
       } else if (level === "warning") {
-        entry.warning++;
+        entry.warning = (entry.warning as number) + 1;
       } else {
-        entry.info++;
+        entry.info = (entry.info as number) + 1;
       }
     });
     
@@ -94,14 +99,14 @@ const SourceActivityTimeline: React.FC<SourceActivityTimelineProps> = ({ data, l
     // Sort by time
     if (useHourly) {
       sortedData.sort((a, b) => {
-        const [dateA, timeA] = a.time.split(' ');
-        const [dateB, timeB] = b.time.split(' ');
+        const [dateA, timeA] = (a.time as string).split(' ');
+        const [dateB, timeB] = (b.time as string).split(' ');
         return dateA.localeCompare(dateB) || timeA.localeCompare(timeB);
       });
     } else {
       sortedData.sort((a, b) => {
-        const partsA = a.time.split('/').map(Number);
-        const partsB = b.time.split('/').map(Number);
+        const partsA = (a.time as string).split('/').map(Number);
+        const partsB = (b.time as string).split('/').map(Number);
         return partsA[2] - partsB[2] || partsA[0] - partsB[0] || partsA[1] - partsB[1];
       });
     }
@@ -120,19 +125,27 @@ const SourceActivityTimeline: React.FC<SourceActivityTimelineProps> = ({ data, l
             <div className="grid grid-cols-2 gap-x-4 gap-y-1">
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                <span>Windows: {payload.find(p => p.name === 'Windows')?.value || 0}</span>
+                <span>Azure AD: {payload.find(p => p.name === 'ActiveDirectory')?.value || 0}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                <span>Security: {payload.find(p => p.name === 'SecurityCenter')?.value || 0}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                <span>AWS: {payload.find(p => p.name === 'AWS')?.value || 0}</span>
+                <span>VMs: {payload.find(p => p.name === 'VirtualMachines')?.value || 0}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                <span>Key Vault: {payload.find(p => p.name === 'KeyVault')?.value || 0}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
                 <span>Network: {payload.find(p => p.name === 'Network')?.value || 0}</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                <span>Database: {payload.find(p => p.name === 'Database')?.value || 0}</span>
+                <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
+                <span>Storage: {payload.find(p => p.name === 'Storage')?.value || 0}</span>
               </div>
             </div>
             
@@ -167,7 +180,7 @@ const SourceActivityTimeline: React.FC<SourceActivityTimelineProps> = ({ data, l
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-blue-500" />
-            Source Activity Over Time
+            Azure Activity Over Time
           </CardTitle>
         </CardHeader>
         <CardContent className="h-[300px] flex items-center justify-center">
@@ -182,7 +195,7 @@ const SourceActivityTimeline: React.FC<SourceActivityTimelineProps> = ({ data, l
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-blue-500" />
-          Source Activity Over Time
+          Azure Activity Over Time
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -215,19 +228,39 @@ const SourceActivityTimeline: React.FC<SourceActivityTimelineProps> = ({ data, l
                 />
                 <Area 
                   type="monotone"
-                  dataKey="Windows"
+                  dataKey="ActiveDirectory"
                   stackId="1"
                   stroke="#0ea5e9"
                   fill="#0ea5e9"
                   fillOpacity={0.6}
+                  name="Azure AD"
                 />
                 <Area 
                   type="monotone"
-                  dataKey="AWS"
+                  dataKey="SecurityCenter"
+                  stackId="1"
+                  stroke="#ef4444"
+                  fill="#ef4444"
+                  fillOpacity={0.6}
+                  name="Security"
+                />
+                <Area 
+                  type="monotone"
+                  dataKey="VirtualMachines"
                   stackId="1"
                   stroke="#f97316"
                   fill="#f97316"
                   fillOpacity={0.6}
+                  name="VMs"
+                />
+                <Area 
+                  type="monotone"
+                  dataKey="KeyVault"
+                  stackId="1"
+                  stroke="#a855f7"
+                  fill="#a855f7"
+                  fillOpacity={0.6}
+                  name="Key Vault"
                 />
                 <Area 
                   type="monotone"
@@ -236,22 +269,16 @@ const SourceActivityTimeline: React.FC<SourceActivityTimelineProps> = ({ data, l
                   stroke="#10b981"
                   fill="#10b981"
                   fillOpacity={0.6}
+                  name="Network"
                 />
                 <Area 
                   type="monotone"
-                  dataKey="Database"
+                  dataKey="Storage"
                   stackId="1"
-                  stroke="#a855f7"
-                  fill="#a855f7"
+                  stroke="#06b6d4"
+                  fill="#06b6d4"
                   fillOpacity={0.6}
-                />
-                <Area 
-                  type="monotone"
-                  dataKey="Other"
-                  stackId="1"
-                  stroke="#6b7280"
-                  fill="#6b7280"
-                  fillOpacity={0.6}
+                  name="Storage"
                 />
               </AreaChart>
             </ResponsiveContainer>

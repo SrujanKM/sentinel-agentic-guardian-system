@@ -1,6 +1,6 @@
 
 import axios from 'axios';
-import logSimulator from './logSimulator';
+import azureLogSimulator from './azureLogSimulator';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -36,6 +36,34 @@ const checkBackendConnection = async () => {
   }
 };
 
+// Get Azure credentials
+const getAzureCredentials = async () => {
+  try {
+    if (await checkBackendConnection()) {
+      const response = await api.get('/credentials/azure');
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching Azure credentials:', error);
+    return null;
+  }
+};
+
+// Get Gemini API key
+const getGeminiApiKey = async () => {
+  try {
+    if (await checkBackendConnection()) {
+      const response = await api.get('/credentials/gemini');
+      return response.data.key;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching Gemini API key:', error);
+    return null;
+  }
+};
+
 // Logs API
 export const fetchLogs = async (filters = {}) => {
   try {
@@ -46,13 +74,13 @@ export const fetchLogs = async (filters = {}) => {
     } else {
       // Use simulator if backend is not available
       // Generate some new logs to have fresh data
-      logSimulator.generateLogs(Math.floor(Math.random() * 3) + 2);
-      return logSimulator.getRecentLogs();
+      azureLogSimulator.generateLogs(Math.floor(Math.random() * 3) + 2);
+      return azureLogSimulator.getRecentLogs();
     }
   } catch (error) {
     console.error('Error fetching logs:', error);
     // Fallback to simulator
-    return logSimulator.getRecentLogs();
+    return azureLogSimulator.getRecentLogs();
   }
 };
 
@@ -80,12 +108,12 @@ export const fetchThreats = async (filters = {}) => {
       return response.data;
     } else {
       // Use simulator if backend is not available
-      return logSimulator.getThreats();
+      return azureLogSimulator.getThreats();
     }
   } catch (error) {
     console.error('Error fetching threats:', error);
     // Fallback to simulator
-    return logSimulator.getThreats();
+    return azureLogSimulator.getThreats();
   }
 };
 
@@ -122,8 +150,8 @@ export const fetchSystemStats = async () => {
       return response.data;
     } else {
       // Generate simulated system stats
-      const threats = logSimulator.getThreats();
-      const logs = logSimulator.getRecentLogs();
+      const threats = azureLogSimulator.getThreats();
+      const logs = azureLogSimulator.getRecentLogs();
       
       return {
         total_logs: logs.length,
@@ -175,6 +203,28 @@ export const getBackendStatus = async () => {
     url: API_URL,
     lastChecked: new Date().toISOString()
   };
+};
+
+// Check credential status
+export const checkCredentialStatus = async () => {
+  try {
+    if (await checkBackendConnection()) {
+      const response = await api.get('/credentials/status');
+      return response.data;
+    } else {
+      // Simulate credentials status
+      return {
+        azure: { present: false, valid: false },
+        gemini: { present: false, valid: false }
+      };
+    }
+  } catch (error) {
+    console.error('Error checking credential status:', error);
+    return {
+      azure: { present: false, valid: false },
+      gemini: { present: false, valid: false }
+    };
+  }
 };
 
 export default api;
