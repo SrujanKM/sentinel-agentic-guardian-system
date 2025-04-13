@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ThreatTimeline from "./ThreatTimeline";
@@ -102,46 +101,6 @@ const Dashboard = () => {
     setActiveTab(value);
   };
 
-  const renderCredentialAlert = () => {
-    if (!credentialStatus.azure.present || !credentialStatus.gemini.present) {
-      return (
-        <Alert variant="warning" className="mb-4 bg-amber-900/20 border-amber-700">
-          <Info className="h-4 w-4 text-amber-500" />
-          <AlertTitle>Credentials Missing</AlertTitle>
-          <AlertDescription>
-            {!credentialStatus.azure.present && !credentialStatus.gemini.present ? (
-              "Azure credentials file and Gemini API key are not configured."
-            ) : !credentialStatus.azure.present ? (
-              "Azure credentials file is not configured."
-            ) : (
-              "Gemini API key is not configured."
-            )}
-          </AlertDescription>
-        </Alert>
-      );
-    }
-    
-    if (!credentialStatus.azure.valid || !credentialStatus.gemini.valid) {
-      return (
-        <Alert variant="destructive" className="mb-4">
-          <Shield className="h-4 w-4" />
-          <AlertTitle>Credential Validation Failed</AlertTitle>
-          <AlertDescription>
-            {!credentialStatus.azure.valid && !credentialStatus.gemini.valid ? (
-              "Azure credentials and Gemini API key validation failed."
-            ) : !credentialStatus.azure.valid ? (
-              "Azure credentials validation failed."
-            ) : (
-              "Gemini API key validation failed."
-            )}
-          </AlertDescription>
-        </Alert>
-      );
-    }
-    
-    return null;
-  };
-
   return (
     <div className="flex-1 container mx-auto p-4 overflow-hidden">
       {error && (
@@ -149,8 +108,6 @@ const Dashboard = () => {
           {error}
         </div>
       )}
-      
-      {renderCredentialAlert()}
       
       <div className="grid grid-cols-12 gap-4 h-[calc(100vh-72px)]">
         {/* Main Content */}
