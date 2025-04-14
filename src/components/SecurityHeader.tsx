@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { AlertTriangle, Shield, Bell, Settings, X, User, LogOut, Lock, Activity, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,8 +81,10 @@ const SecurityHeader = () => {
   useEffect(() => {
     const getActiveThreats = async () => {
       try {
-        const threats = await fetchThreats({ status: "active" });
-        setActiveThreats(threats.length);
+        // Get only active threats, not total threats
+        const threats = await fetchThreats();
+        const activeThreatCount = threats.filter(threat => threat.status === "active").length;
+        setActiveThreats(activeThreatCount);
       } catch (error) {
         console.error("Failed to fetch threats:", error);
       }
@@ -89,7 +92,8 @@ const SecurityHeader = () => {
     
     getActiveThreats();
     
-    const intervalId = setInterval(getActiveThreats, 30000);
+    // Update active threats count more frequently
+    const intervalId = setInterval(getActiveThreats, 15000); // Every 15 seconds
     return () => clearInterval(intervalId);
   }, []);
 

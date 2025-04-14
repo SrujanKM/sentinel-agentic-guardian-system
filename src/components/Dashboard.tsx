@@ -49,10 +49,10 @@ const Dashboard = () => {
 
     loadData();
 
-    // Set up a refresh interval for data (less frequent to reduce unnecessary refreshes)
+    // Set up a refresh interval for data - more frequent refresh
     const refreshInterval = setInterval(() => {
       loadData();
-    }, 120000); // Every 2 minutes (increased from 60 seconds)
+    }, 30000); // Every 30 seconds (shortened to pick up new threats)
 
     // Fix for settings menu bug: ensure click events work properly after Popover dialogs close
     const restorePointerEvents = () => {
@@ -76,7 +76,8 @@ const Dashboard = () => {
 
   const handleTabChange = (value) => {
     setActiveTab(value);
-    // Do not reset selectedThreat when tab changes to maintain threat details
+    // We're no longer changing selectedThreat when tab changes
+    // This ensures threat details persist between tab navigations
   };
 
   return (
