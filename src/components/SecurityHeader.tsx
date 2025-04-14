@@ -153,7 +153,8 @@ const SecurityHeader = () => {
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Shield className="h-6 w-6 text-emerald-500" />
-          <span className="text-xl font-bold text-emerald-400 font-mono">SENTINEL AGS</span>
+          <span className="text-xl font-bold text-emerald-400 font-mono">CloudShield</span>
+          <span className="hidden md:inline text-sm text-emerald-400/70">A Framework for Cloud Data Security using Agentic AI</span>
         </div>
         
         <div className="flex items-center space-x-2">

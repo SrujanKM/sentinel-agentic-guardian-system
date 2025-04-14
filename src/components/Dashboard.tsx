@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ThreatTimeline from "./ThreatTimeline";
@@ -20,35 +21,24 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
-  const [credentialStatus, setCredentialStatus] = useState({
-    azure: { present: false, valid: false },
-    gemini: { present: false, valid: false }
-  });
   
   const handleThreatSelect = (threat) => {
     setSelectedThreat(threat);
   };
 
-  // Reset selected threat when changing to a tab where it wouldn't be visible
-  useEffect(() => {
-    if (activeTab !== "overview" && activeTab !== "threats") {
-      setSelectedThreat(null);
-    }
-  }, [activeTab]);
-
+  // Don't reset selected threat when changing tabs
+  
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [threatsData, logsData, credentials] = await Promise.all([
+        const [threatsData, logsData] = await Promise.all([
           fetchThreats(),
-          fetchLogs({ limit: 20 }), // Reduce the number of logs fetched to avoid clutter
-          checkCredentialStatus()
+          fetchLogs({ limit: 20 }) // Reduce the number of logs fetched to avoid clutter
         ]);
         
         setThreats(threatsData);
         setLogs(logsData);
-        setCredentialStatus(credentials);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Failed to load data. Using mock data instead.");

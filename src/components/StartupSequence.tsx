@@ -8,15 +8,14 @@ const StartupSequence = () => {
 
   useEffect(() => {
     const startupMessages = [
-      { text: "Loading Python environment...", delay: 500 },
-      { text: "Initializing FastAPI server...", delay: 800 },
-      { text: "Creating SQLite database with encryption...", delay: 1200 },
-      { text: "Loading Windows Event Log module (pywin32)...", delay: 1000 },
-      { text: "Connecting to Event Log sources...", delay: 900 },
-      { text: "Loading Isolation Forest model...", delay: 1100 },
-      { text: "Starting anomaly detection service...", delay: 1000 },
-      { text: "Loading threat intelligence database...", delay: 700 },
-      { text: "Starting automated response system...", delay: 900 },
+      { text: "Loading Python environment... Done", delay: 500 },
+      { text: "Initializing FastAPI server... Done", delay: 800 },
+      { text: "Creating SQLite database with encryption... Done", delay: 1200 },
+      { text: "Connecting to Azure Log sources... Done", delay: 900 },
+      { text: "Loading Isolation Forest model... Done", delay: 1100 },
+      { text: "Starting anomaly detection service... Done", delay: 1000 },
+      { text: "Loading threat intelligence database... Done", delay: 700 },
+      { text: "Starting automated response system... Done", delay: 900 },
       { text: "System ready. Click Initialize to begin.", delay: 1000 }
     ];
 
@@ -45,9 +44,9 @@ const StartupSequence = () => {
     <div className="w-full max-w-3xl bg-black border border-emerald-500/30 rounded-md overflow-hidden shadow-lg shadow-emerald-500/10">
       <div className="bg-gray-900 border-b border-emerald-500/20 p-2 flex items-center gap-2">
         <Terminal className="h-4 w-4 text-emerald-500" />
-        <span className="text-xs font-mono text-emerald-400">SENTINEL AGS - Security System Initialization</span>
+        <span className="text-xs font-mono text-emerald-400">CloudShield - A Framework for Cloud Data Security using Agentic AI</span>
       </div>
-      <div className="p-4 font-mono text-xs">
+      <div className="p-4 font-mono text-sm">
         {lines.map((line, i) => (
           <div key={i} className="text-gray-300 mb-1">{line}</div>
         ))}

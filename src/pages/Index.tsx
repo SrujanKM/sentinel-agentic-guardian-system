@@ -16,6 +16,9 @@ const Index = () => {
     <div className="min-h-screen bg-black text-white flex flex-col">
       {!systemStarted ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <h1 className="text-2xl font-bold text-emerald-400 font-mono mb-8 text-center">
+            CloudShield - A Framework for Cloud Data Security using Agentic AI
+          </h1>
           <StartupSequence />
           <div className="mt-8">
             <Button 
