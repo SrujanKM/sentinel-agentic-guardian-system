@@ -105,9 +105,15 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
     }
   };
   
+  // Ensure consistent time format across components
   const getTimeAgo = (timestamp) => {
     if (!timestamp) return "Unknown time";
     return AzureLogSimulator.formatTimeAgo(timestamp);
+  };
+  
+  const getFormattedTime = (timestamp) => {
+    if (!timestamp) return "Unknown time";
+    return AzureLogSimulator.formatToIST(timestamp);
   };
   
   const filteredThreats = threats.filter(threat => {
@@ -302,7 +308,9 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
                       <h4 className="font-medium text-white">{threat.title}</h4>
                       <div className="text-xs text-gray-400 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {getTimeAgo(threat.timestamp)}
+                        <span title={getFormattedTime(threat.timestamp)}>
+                          {getTimeAgo(threat.timestamp)}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">

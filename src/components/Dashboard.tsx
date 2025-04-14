@@ -52,7 +52,7 @@ const Dashboard = () => {
     // Set up a refresh interval for data - more frequent refresh
     const refreshInterval = setInterval(() => {
       loadData();
-    }, 30000); // Every 30 seconds (shortened to pick up new threats)
+    }, 15000); // Every 15 seconds (shortened for better real-time updates)
 
     // Fix for settings menu bug: ensure click events work properly after Popover dialogs close
     const restorePointerEvents = () => {

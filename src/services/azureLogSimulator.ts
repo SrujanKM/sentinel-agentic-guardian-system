@@ -1,3 +1,4 @@
+
 // src/services/azureLogSimulator.ts
 import { v4 as uuidv4 } from 'uuid';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -105,7 +106,7 @@ class AzureLogSimulator {
   ];
   private lastAutoResolveCheck: number = Date.now();
   private lastThreatGenerationTime: number = Date.now();
-  private threatGenerationInterval: number = 180000 + Math.floor(Math.random() * 120000); // 3-5 minutes
+  private threatGenerationInterval: number = 60000 + Math.floor(Math.random() * 60000); // 1-2 minutes
 
   constructor() {
     // Initialize with some data
@@ -115,13 +116,41 @@ class AzureLogSimulator {
     setInterval(() => this.autoResolveThreats(), 60000); // Check every minute
     
     // Set up automated threat generation
-    setInterval(() => this.generatePeriodicThreat(), 30000); // Check every 30 seconds
+    setInterval(() => this.generatePeriodicThreat(), 10000); // Check every 10 seconds
   }
 
   private generateInitialData(): void {
-    // Generate initial logs and threats
-    this.generateRandomLogs(15); // Reduced initial log count
-    this.generateRandomThreats(10); // Reduced initial threat count
+    // Generate initial logs and threats (5-8 threats in the last 3-4 hours)
+    this.generateRandomLogs(10);
+    
+    // Generate 5-8 initial threats with timestamps from the last 3-4 hours
+    const now = Date.now();
+    const threatsCount = 5 + Math.floor(Math.random() * 4); // 5-8 threats
+    
+    for (let i = 0; i < threatsCount; i++) {
+      // Generate a random time in the past 3-4 hours
+      const hoursAgo = Math.random() * 4; // 0-4 hours ago
+      const pastTime = now - (hoursAgo * 60 * 60 * 1000);
+      
+      // Create a new threat with this timestamp
+      const newThreat = this.generateThreat();
+      newThreat.timestamp = new Date(pastTime).toISOString();
+      
+      // Randomize status - some resolved, some active
+      newThreat.status = Math.random() > 0.4 ? 'active' : 'resolved';
+      
+      // Add to threats list
+      this.threats.push(newThreat);
+      
+      // Also generate associated log
+      const logEvent = this.generateEventForThreat(newThreat);
+      this.logs.push(logEvent);
+    }
+    
+    // Sort threats by timestamp (newest first)
+    this.threats.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
   }
 
   // Generate a new threat periodically to simulate live environment
@@ -147,8 +176,8 @@ class AzureLogSimulator {
       // Reset the timer
       this.lastThreatGenerationTime = now;
       
-      // Set a new random interval (3-5 minutes)
-      this.threatGenerationInterval = 180000 + Math.floor(Math.random() * 120000);
+      // Set a new random interval (1-2 minutes)
+      this.threatGenerationInterval = 60000 + Math.floor(Math.random() * 60000);
       
       console.log(`New threat generated: ${newThreat.title}. Next threat in ${Math.round(this.threatGenerationInterval/60000)} minutes`);
       
@@ -220,6 +249,7 @@ class AzureLogSimulator {
     this.lastAutoResolveCheck = now;
   }
 
+  // Helper methods for generating random data
   private generateIpAddress(): string {
     return Array.from({ length: 4 }, () => Math.floor(Math.random() * 256)).join('.');
   }
@@ -228,10 +258,10 @@ class AzureLogSimulator {
     return Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
   }
 
-  private generatePastDate(maxDaysAgo: number = 2): Date {
+  private generatePastDate(maxHoursAgo: number = 4): Date {
     const now = new Date();
-    // Generate a past time, not a future time
-    const pastTime = now.getTime() - Math.floor(Math.random() * (maxDaysAgo * 24 * 60 * 60 * 1000));
+    // Generate a past time within the specified hours, not a future time
+    const pastTime = now.getTime() - Math.floor(Math.random() * (maxHoursAgo * 60 * 60 * 1000));
     return new Date(pastTime);
   }
 
@@ -242,7 +272,8 @@ class AzureLogSimulator {
   private generateEvent(): LogEvent {
     const type = this.eventTypes[Math.floor(Math.random() * this.eventTypes.length)];
     const severity = this.severities[Math.floor(Math.random() * this.severities.length)];
-    const timestamp = this.formatTimestamp(this.generatePastDate());
+    // Use current time or very recent past time only
+    const timestamp = this.formatTimestamp(this.generatePastDate(0.5)); // Max 30 minutes in the past
     const source = this.sources[Math.floor(Math.random() * this.sources.length)];
 
     let event: LogEvent = {
@@ -336,7 +367,8 @@ class AzureLogSimulator {
     const user = Math.random() > 0.3 ? this.users[Math.floor(Math.random() * this.users.length)] : undefined;
     const hostname = this.hostnames[Math.floor(Math.random() * this.hostnames.length)];
     const status = Math.random() > 0.3 ? 'active' : 'resolved';
-    const timestamp = this.formatTimestamp(this.generatePastDate(1));
+    // Use current time or very recent past time only
+    const timestamp = this.formatTimestamp(new Date());
     
     // Generate threat title based on type
     let title = '';

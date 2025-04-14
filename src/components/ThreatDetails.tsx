@@ -140,7 +140,9 @@ const ThreatDetails = ({ selectedThreat }) => {
           <div className="flex items-center gap-1 text-gray-400">
             <Clock className="h-3 w-3" />
             <span>Detected: </span>
-            <span className="text-white">{formatDateTime(selectedThreat.timestamp)}</span>
+            <span className="text-white" title={formatDateTime(selectedThreat.timestamp)}>
+              {formatDateTime(selectedThreat.timestamp)}
+            </span>
           </div>
           <div className="flex items-center gap-1 text-gray-400">
             <Server className="h-3 w-3" />
