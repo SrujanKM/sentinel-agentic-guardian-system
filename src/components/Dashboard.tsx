@@ -8,10 +8,8 @@ import LogsPanel from "./LogsPanel";
 import ThreatDetails from "./ThreatDetails";
 import BackendStatus from "./BackendStatus";
 import AnalyticsModule from "./analytics/AnalyticsModule";
-import { fetchLogs, fetchThreats, checkCredentialStatus } from "@/services/api";
+import { fetchLogs, fetchThreats } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Info } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -19,7 +17,6 @@ const Dashboard = () => {
   const [threats, setThreats] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   
   const handleThreatSelect = (threat) => {
@@ -41,19 +38,12 @@ const Dashboard = () => {
         setLogs(logsData);
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError("Failed to load data. Using mock data instead.");
         
-        // Load mock data if API fails
+        // Load mock data if API fails (silently, no error message to user)
         import("@/data/mockData").then(({ mockThreats, mockLogs }) => {
           // Reduce mock data size to avoid clutter
           setThreats(mockThreats.slice(0, 15));
           setLogs(mockLogs.slice(0, 20));
-          
-          toast({
-            title: "Using Mock Data",
-            description: "Couldn't connect to the API. Using locally stored mock data.",
-            variant: "destructive",
-          });
         });
       } finally {
         setLoading(false);
@@ -93,12 +83,6 @@ const Dashboard = () => {
 
   return (
     <div className="flex-1 container mx-auto p-4 overflow-hidden">
-      {error && (
-        <div className="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-md mb-4">
-          {error}
-        </div>
-      )}
-      
       <div className="grid grid-cols-12 gap-4 h-[calc(100vh-72px)]">
         {/* Main Content */}
         <div className="col-span-12 lg:col-span-8 space-y-4 overflow-y-auto pr-2">

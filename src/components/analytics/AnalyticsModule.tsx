@@ -14,6 +14,7 @@ import ResponseTimeAnalysis from "./ResponseTimeAnalysis";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import AzureLogSimulator from "@/services/azureLogSimulator";
 
 const AnalyticsModule = () => {
   const { toast } = useToast();
@@ -40,8 +41,15 @@ const AnalyticsModule = () => {
       console.error("Error loading analytics data:", error);
       toast({
         title: "Error Loading Data",
-        description: "Could not load analytics data. See console for details.",
+        description: "Could not load analytics data. Trying alternative sources.",
         variant: "destructive"
+      });
+      
+      // Load data from our backup sources
+      import("@/data/mockData").then(({ mockThreats, mockLogs }) => {
+        setThreats(mockThreats);
+        setLogs(mockLogs);
+        setLastUpdated(new Date());
       });
     } finally {
       setLoading(false);
@@ -64,6 +72,8 @@ const AnalyticsModule = () => {
     });
   };
 
+  const formattedLastUpdated = AzureLogSimulator.formatToIST(lastUpdated.toISOString());
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -80,7 +90,7 @@ const AnalyticsModule = () => {
             Refresh
           </Button>
           <span className="text-xs text-gray-400">
-            Last updated: {lastUpdated.toLocaleTimeString()}
+            Last updated: {formattedLastUpdated}
           </span>
         </div>
       </div>

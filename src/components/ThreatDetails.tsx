@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, ShieldAlert, ArrowRightCircle, CheckCircle, Clock, Server, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { triggerAction } from "@/services/api";
+import AzureLogSimulator from "@/services/azureLogSimulator";
 
 const ThreatDetails = ({ selectedThreat }) => {
   const { toast } = useToast();
@@ -49,6 +50,11 @@ const ThreatDetails = ({ selectedThreat }) => {
       default:
         return "text-gray-500 bg-gray-500/10";
     }
+  };
+
+  const formatDateTime = (timestamp) => {
+    if (!timestamp) return "Unknown date";
+    return AzureLogSimulator.formatToIST(timestamp);
   };
 
   const handleRespondButton = async () => {
@@ -134,7 +140,7 @@ const ThreatDetails = ({ selectedThreat }) => {
           <div className="flex items-center gap-1 text-gray-400">
             <Clock className="h-3 w-3" />
             <span>Detected: </span>
-            <span className="text-white">{new Date(selectedThreat.timestamp).toLocaleString()}</span>
+            <span className="text-white">{formatDateTime(selectedThreat.timestamp)}</span>
           </div>
           <div className="flex items-center gap-1 text-gray-400">
             <Server className="h-3 w-3" />

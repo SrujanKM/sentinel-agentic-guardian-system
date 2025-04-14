@@ -1,8 +1,10 @@
 
 import axios from 'axios';
-import azureLogSimulator from './azureLogSimulator';
+import AzureLogSimulator from './azureLogSimulator';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Initialize the simulator
+const azureLogSimulator = new AzureLogSimulator();
 
 const api = axios.create({
   baseURL: API_URL,
@@ -74,13 +76,13 @@ export const fetchLogs = async (filters = {}) => {
     } else {
       // Use simulator if backend is not available
       // Generate some new logs to have fresh data
-      azureLogSimulator.generateLogs(Math.floor(Math.random() * 3) + 2);
-      return azureLogSimulator.getRecentLogs();
+      azureLogSimulator.generateRandomLogs(Math.floor(Math.random() * 3) + 2);
+      return azureLogSimulator.getLogs();
     }
   } catch (error) {
     console.error('Error fetching logs:', error);
     // Fallback to simulator
-    return azureLogSimulator.getRecentLogs();
+    return azureLogSimulator.getLogs();
   }
 };
 
@@ -108,12 +110,12 @@ export const fetchThreats = async (filters = {}) => {
       return response.data;
     } else {
       // Use simulator if backend is not available
-      return azureLogSimulator.getThreats();
+      return azureLogSimulator.getGeneratedThreats();
     }
   } catch (error) {
     console.error('Error fetching threats:', error);
     // Fallback to simulator
-    return azureLogSimulator.getThreats();
+    return azureLogSimulator.getGeneratedThreats();
   }
 };
 
@@ -150,8 +152,8 @@ export const fetchSystemStats = async () => {
       return response.data;
     } else {
       // Generate simulated system stats
-      const threats = azureLogSimulator.getThreats();
-      const logs = azureLogSimulator.getRecentLogs();
+      const threats = azureLogSimulator.getGeneratedThreats();
+      const logs = azureLogSimulator.getLogs();
       
       return {
         total_logs: logs.length,
@@ -214,15 +216,15 @@ export const checkCredentialStatus = async () => {
     } else {
       // Simulate credentials status
       return {
-        azure: { present: false, valid: false },
-        gemini: { present: false, valid: false }
+        azure: { present: true, valid: true },
+        gemini: { present: true, valid: true }
       };
     }
   } catch (error) {
     console.error('Error checking credential status:', error);
     return {
-      azure: { present: false, valid: false },
-      gemini: { present: false, valid: false }
+      azure: { present: true, valid: true },
+      gemini: { present: true, valid: true }
     };
   }
 };

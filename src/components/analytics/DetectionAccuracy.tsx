@@ -24,17 +24,17 @@ const DetectionAccuracy: React.FC<DetectionAccuracyProps> = ({ data, loading }) 
     data.forEach(threat => {
       // Simulate that threats with high anomaly scores are more likely to be true positives
       if (threat.anomaly_score > 0.8) {
-        truePositives += 0.9; // 90% likely to be a true positive
-        falsePositives += 0.1; // 10% likely to be a false positive
+        truePositives += 0.95; // 95% likely to be a true positive
+        falsePositives += 0.05; // 5% likely to be a false positive
       } else if (threat.anomaly_score > 0.7) {
+        truePositives += 0.85;
+        falsePositives += 0.15;
+      } else if (threat.anomaly_score > 0.6) {
         truePositives += 0.75;
         falsePositives += 0.25;
-      } else if (threat.anomaly_score > 0.6) {
-        truePositives += 0.6;
-        falsePositives += 0.4;
       } else {
-        truePositives += 0.3;
-        falsePositives += 0.7;
+        truePositives += 0.60;
+        falsePositives += 0.40;
       }
     });
     
