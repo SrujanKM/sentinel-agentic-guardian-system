@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fetchLogs } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import AzureLogSimulator from "@/services/azureLogSimulator";
 
 const LogsPanel = ({ logs = [] }) => {
   const { toast } = useToast();
@@ -25,7 +26,7 @@ const LogsPanel = ({ logs = [] }) => {
     setLocalLogs(logs);
   }, [logs]);
 
-  // Refresh logs every 15 seconds
+  // Refresh logs less frequently (every 60 seconds instead of 15)
   useEffect(() => {
     const refreshInterval = setInterval(async () => {
       try {
@@ -34,7 +35,7 @@ const LogsPanel = ({ logs = [] }) => {
       } catch (error) {
         console.error("Failed to refresh logs:", error);
       }
-    }, 15000);
+    }, 60000); // Changed from 15000 to 60000 for less frequent updates
 
     return () => clearInterval(refreshInterval);
   }, []);
@@ -246,7 +247,8 @@ const LogsPanel = ({ logs = [] }) => {
                         <div className="flex items-center gap-2">
                           <Clock className="h-3 w-3 text-gray-400" />
                           <span className="font-mono text-gray-400">
-                            {new Date(log.timestamp).toLocaleTimeString()}
+                            {/* Format timestamp in IST with full date and time */}
+                            {AzureLogSimulator.formatToIST(log.timestamp)}
                           </span>
                         </div>
                         <div className="flex items-center gap-1">

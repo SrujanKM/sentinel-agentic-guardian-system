@@ -22,8 +22,6 @@ const Dashboard = () => {
   const handleThreatSelect = (threat) => {
     setSelectedThreat(threat);
   };
-
-  // Don't reset selected threat when changing tabs
   
   useEffect(() => {
     const loadData = async () => {
@@ -31,7 +29,7 @@ const Dashboard = () => {
         setLoading(true);
         const [threatsData, logsData] = await Promise.all([
           fetchThreats(),
-          fetchLogs({ limit: 20 }) // Reduce the number of logs fetched to avoid clutter
+          fetchLogs({ limit: 20 })
         ]);
         
         setThreats(threatsData);
@@ -41,7 +39,6 @@ const Dashboard = () => {
         
         // Load mock data if API fails (silently, no error message to user)
         import("@/data/mockData").then(({ mockThreats, mockLogs }) => {
-          // Reduce mock data size to avoid clutter
           setThreats(mockThreats.slice(0, 15));
           setLogs(mockLogs.slice(0, 20));
         });
@@ -55,7 +52,7 @@ const Dashboard = () => {
     // Set up a refresh interval for data (less frequent to reduce unnecessary refreshes)
     const refreshInterval = setInterval(() => {
       loadData();
-    }, 60000); // Every 60 seconds
+    }, 120000); // Every 2 minutes (increased from 60 seconds)
 
     // Fix for settings menu bug: ensure click events work properly after Popover dialogs close
     const restorePointerEvents = () => {
@@ -79,6 +76,7 @@ const Dashboard = () => {
 
   const handleTabChange = (value) => {
     setActiveTab(value);
+    // Do not reset selectedThreat when tab changes to maintain threat details
   };
 
   return (

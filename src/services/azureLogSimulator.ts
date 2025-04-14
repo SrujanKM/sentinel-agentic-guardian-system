@@ -1,7 +1,6 @@
-
 // src/services/azureLogSimulator.ts
 import { v4 as uuidv4 } from 'uuid';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, addHours } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 
 interface LogEvent {
@@ -46,6 +45,7 @@ interface Threat {
     affected_systems?: string[];
     azure_resource_id?: string;
     attack_vector?: string;
+    detection_time?: string;
   }
 }
 
@@ -103,16 +103,46 @@ class AzureLogSimulator {
     'data exfiltration',
     'anomaly'
   ];
+  private lastAutoResolveCheck: number = Date.now();
 
   constructor() {
     // Initialize with some data
     this.generateInitialData();
+    
+    // Set up automatic threat resolution
+    setInterval(() => this.autoResolveThreats(), 60000); // Check every minute
   }
 
   private generateInitialData(): void {
     // Generate initial logs and threats
-    this.generateRandomLogs(25);
-    this.generateRandomThreats(15);
+    this.generateRandomLogs(15); // Reduced initial log count
+    this.generateRandomThreats(10); // Reduced initial threat count
+  }
+
+  // Auto-resolve threats that are older than the threshold
+  private autoResolveThreats(): void {
+    const now = Date.now();
+    const resolutionThreshold = 90 * 60 * 1000; // 90 minutes (1.5 hours)
+    
+    let resolvedCount = 0;
+    
+    this.threats.forEach(threat => {
+      if (threat.status === 'active') {
+        const threatTime = new Date(threat.timestamp).getTime();
+        if (now - threatTime > resolutionThreshold) {
+          threat.status = 'resolved';
+          threat.actions = threat.actions || [];
+          threat.actions.push('Automatically resolved by system');
+          resolvedCount++;
+        }
+      }
+    });
+    
+    if (resolvedCount > 0) {
+      console.log(`Auto-resolved ${resolvedCount} threats that were older than ${resolutionThreshold / (60 * 1000)} minutes`);
+    }
+    
+    this.lastAutoResolveCheck = now;
   }
 
   private generateIpAddress(): string {
@@ -340,59 +370,60 @@ class AzureLogSimulator {
         attack_vector: threatType === 'malware' ? 'malicious-payload' : 
                         threatType === 'brute force' ? 'credential-stuffing' : 
                         threatType === 'unauthorized access' ? 'stolen-credentials' : 
-                        'unknown'
+                        'unknown',
+        detection_time: timestamp
       }
     };
   }
 
-  // Public methods to generate data
   public generateRandomLogs(count: number): LogEvent[] {
+    const adjustedCount = Math.min(count, 5); // Cap at 5 logs at a time
+    
     const newLogs: LogEvent[] = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < adjustedCount; i++) {
       const newLog = this.generateEvent();
       newLogs.push(newLog);
       this.logs.push(newLog);
     }
     
     // Limit total logs to prevent memory issues
-    if (this.logs.length > 500) {
-      this.logs = this.logs.slice(this.logs.length - 500);
+    if (this.logs.length > 200) { // Reduced from 500
+      this.logs = this.logs.slice(this.logs.length - 200);
     }
     
     return newLogs;
   }
 
   public generateRandomThreats(count: number): Threat[] {
+    const adjustedCount = Math.min(count, 2); // Cap at 2 threats at a time
+    
     const newThreats: Threat[] = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < adjustedCount; i++) {
       const newThreat = this.generateThreat();
       newThreats.push(newThreat);
       this.threats.push(newThreat);
     }
     
     // Limit total threats to prevent memory issues
-    if (this.threats.length > 100) {
-      this.threats = this.threats.slice(this.threats.length - 100);
+    if (this.threats.length > 50) { // Reduced from 100
+      this.threats = this.threats.slice(this.threats.length - 50);
     }
     
     return newThreats;
   }
 
-  // Get all logs with recent ones first
   public getLogs(): LogEvent[] {
     return [...this.logs].sort((a, b) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
   }
 
-  // Get all threats with recent ones first
   public getGeneratedThreats(): Threat[] {
     return [...this.threats].sort((a, b) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
   }
 
-  // Format a date in the IST timezone
   public static formatToIST(dateString: string): string {
     try {
       const date = new Date(dateString);
@@ -404,14 +435,13 @@ class AzureLogSimulator {
       
       // Add 5 hours and 30 minutes for IST
       const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
-      return format(istDate, "dd MMM yyyy, hh:mm a 'IST'", { locale: enUS });
+      return format(istDate, "dd MMM yyyy, h:mm:ss a 'IST'", { locale: enUS });
     } catch (error) {
       console.error("Date formatting error:", error);
       return "Invalid date";
     }
   }
 
-  // Format a date as relative time from now
   public static formatTimeAgo(dateString: string): string {
     try {
       const date = new Date(dateString);

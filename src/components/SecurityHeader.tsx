@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { AlertTriangle, Shield, Bell, Settings, X, User, LogOut, Lock, Activity, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,7 @@ import { Label } from "@/components/ui/label";
 const SecurityHeader = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [activeThreats, setActiveThreats] = useState(3);
+  const [activeThreats, setActiveThreats] = useState(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([
     {
@@ -78,7 +77,6 @@ const SecurityHeader = () => {
   const [userSettingsOpen, setUserSettingsOpen] = useState(false);
   const [securitySettingsOpen, setSecuritySettingsOpen] = useState(false);
 
-  // Fetch active threats count on component mount
   useEffect(() => {
     const getActiveThreats = async () => {
       try {
@@ -91,14 +89,12 @@ const SecurityHeader = () => {
     
     getActiveThreats();
     
-    // Refresh active threats every 30 seconds
     const intervalId = setInterval(getActiveThreats, 30000);
     return () => clearInterval(intervalId);
   }, []);
 
   const handleThreatClick = () => {
     navigate("/");
-    // Use setTimeout to ensure the DOM is updated before accessing the tabs
     setTimeout(() => {
       const threatsTab = document.querySelector('[value="threats"]');
       if (threatsTab) {
@@ -163,7 +159,6 @@ const SecurityHeader = () => {
             <span className="text-sm text-emerald-400">System Active</span>
           </div>
           
-          {/* Notifications Button */}
           <Sheet open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
@@ -220,7 +215,6 @@ const SecurityHeader = () => {
             </SheetContent>
           </Sheet>
           
-          {/* Settings Button */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -253,7 +247,6 @@ const SecurityHeader = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {/* User Settings Dialog */}
           <Dialog open={userSettingsOpen} onOpenChange={setUserSettingsOpen}>
             <DialogContent className="bg-gray-900 border-gray-800 text-white sm:max-w-md">
               <DialogHeader>
@@ -319,7 +312,6 @@ const SecurityHeader = () => {
             </DialogContent>
           </Dialog>
           
-          {/* Security Settings Dialog */}
           <Dialog open={securitySettingsOpen} onOpenChange={setSecuritySettingsOpen}>
             <DialogContent className="bg-gray-900 border-gray-800 text-white sm:max-w-md">
               <DialogHeader>
@@ -412,7 +404,6 @@ const SecurityHeader = () => {
             </DialogContent>
           </Dialog>
           
-          {/* Threats Button */}
           <Button 
             variant="destructive" 
             size="sm" 
