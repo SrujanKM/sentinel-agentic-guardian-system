@@ -31,14 +31,14 @@ declare module "jspdf" {
 
 class ReportGenerator {
   formatTimestamp(timestamp: string): string {
-    return AzureLogSimulator.constructor.formatToIST(timestamp);
+    return AzureLogSimulator.constructor['formatToIST'](timestamp);
   }
 
   // Generate PDF report
   async generatePDFReport(threats: any[], logs: any[], options: ReportOptions) {
     const doc = new jsPDF();
     const now = new Date();
-    const reportDate = AzureLogSimulator.constructor.formatToIST(now.toISOString());
+    const reportDate = AzureLogSimulator.constructor['formatToIST'](now.toISOString());
 
     // Add header
     doc.setFontSize(18);

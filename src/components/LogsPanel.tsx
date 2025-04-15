@@ -258,7 +258,7 @@ const LogsPanel = ({ logs = [] }) => {
                         <div className="flex items-center gap-2">
                           <Clock className="h-3 w-3 text-gray-400" />
                           <span className="font-mono text-gray-400">
-                            {AzureLogSimulator.constructor.formatToIST(log.timestamp)}
+                            {AzureLogSimulator.constructor['formatToIST'](log.timestamp)}
                           </span>
                         </div>
                         <div className="flex items-center gap-1">

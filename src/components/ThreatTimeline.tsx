@@ -105,11 +105,11 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
   };
   
   const formatTimeAgo = (timestamp) => {
-    return AzureLogSimulator.constructor.formatTimeAgo(timestamp);
+    return AzureLogSimulator.constructor['formatTimeAgo'](timestamp);
   };
 
   const formatTimestamp = (timestamp) => {
-    return AzureLogSimulator.constructor.formatToIST(timestamp);
+    return AzureLogSimulator.constructor['formatToIST'](timestamp);
   };
 
   const filteredThreats = threats.filter(threat => {

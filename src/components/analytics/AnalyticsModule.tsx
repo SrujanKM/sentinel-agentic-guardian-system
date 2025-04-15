@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/ui/metric-card";
@@ -40,7 +41,8 @@ const AnalyticsModule = () => {
     fetchStatus();
   }, []);
 
-  const lastUpdated = AzureLogSimulator.constructor.formatToIST(new Date().toISOString());
+  // Use formatToIST method from the AzureLogSimulator instance
+  const lastUpdated = AzureLogSimulator.constructor['formatToIST'](new Date().toISOString());
 
   return (
     <Card className="col-span-2 bg-gray-900 border-gray-800">

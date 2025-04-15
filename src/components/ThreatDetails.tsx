@@ -52,7 +52,7 @@ const ThreatDetails = ({ selectedThreat }) => {
 
   const formatDateTime = (timestamp) => {
     if (!timestamp) return "Unknown date";
-    return AzureLogSimulator.constructor.formatToIST(timestamp);
+    return AzureLogSimulator.constructor['formatToIST'](timestamp);
   };
 
   const handleRespondButton = async () => {
