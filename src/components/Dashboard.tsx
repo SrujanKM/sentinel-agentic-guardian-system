@@ -173,7 +173,7 @@ const Dashboard = () => {
               <BackendStatus />
             </TabsContent>
 
-            <TabsContent value="analytics">
+            <TabsContent value="analytics" className="overflow-y-auto pb-4">
               <AnalyticsModule activeThreatCount={activeThreatCount} />
             </TabsContent>
           </Tabs>

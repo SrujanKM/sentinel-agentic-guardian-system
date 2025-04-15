@@ -4,6 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Clock, Database, Server, ShieldAlert, Users } from "lucide-react";
 import AzureLogSimulator from "@/services/azureLogSimulator";
+import ThreatDistribution from "./ThreatDistribution";
+import RiskLevelDistribution from "./RiskLevelDistribution";
+import SourceBreakdown from "./SourceBreakdown";
+import DetectionAccuracy from "./DetectionAccuracy";
+import ResponseTimeAnalysis from "./ResponseTimeAnalysis";
+import DetectionTimeline from "./DetectionTimeline";
+import SourceActivityTimeline from "./SourceActivityTimeline";
+import AnomalyScoreChart from "./AnomalyScoreChart";
+import { fetchThreats, fetchLogs } from "@/services/api";
 
 const AnalyticsModule = ({ activeThreatCount = 0 }) => {
   const [systemStatus, setSystemStatus] = useState({
@@ -14,6 +23,9 @@ const AnalyticsModule = ({ activeThreatCount = 0 }) => {
     uptime: 0,
     lastScan: new Date().toISOString()
   });
+  const [threats, setThreats] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -38,50 +50,116 @@ const AnalyticsModule = ({ activeThreatCount = 0 }) => {
       setSystemStatus(status);
     };
 
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [threatsData, logsData] = await Promise.all([
+          fetchThreats({ limit: 50 }),
+          fetchLogs({ limit: 100 })
+        ]);
+        
+        setThreats(threatsData);
+        setLogs(logsData);
+      } catch (err) {
+        console.error("Error fetching data for analytics:", err);
+        
+        // Load mock data if API fails
+        import("@/data/mockData").then(({ mockThreats, mockLogs }) => {
+          setThreats(mockThreats);
+          setLogs(mockLogs);
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchStatus();
+    loadData();
+
+    // Refresh data every 60 seconds
+    const refreshInterval = setInterval(() => {
+      fetchStatus();
+      loadData();
+    }, 60000);
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   // Use formatToIST method from the AzureLogSimulator instance
   const lastUpdated = AzureLogSimulator.constructor['formatToIST'](new Date().toISOString());
 
   return (
-    <Card className="col-span-2 bg-gray-900 border-gray-800">
-      <CardHeader>
-        <CardTitle className="text-lg">System Analytics</CardTitle>
-      </CardHeader>
-      <CardContent className="grid grid-cols-2 gap-4">
-        <MetricCard
-          icon={Server}
-          title="System Status"
-          value={systemStatus.status}
-          deltaText={`Last Updated: ${lastUpdated}`}
-        />
-        <MetricCard
-          icon={Database}
-          title="Version"
-          value={systemStatus.version}
-          deltaText="Latest"
-        />
-        <MetricCard
-          icon={Users}
-          title="Active Services"
-          value={systemStatus.activeServices.length.toString()}
-          deltaText="Running"
-        />
-        <MetricCard
-          icon={ShieldAlert}
-          title="Active Threats"
-          value={activeThreatCount.toString()}
-          deltaText={activeThreatCount === 0 ? "System Protected" : "Requires Attention"}
-        />
-        <MetricCard
-          icon={Clock}
-          title="Uptime"
-          value={`${(systemStatus.uptime / 3600).toFixed(2)} hours`}
-          deltaText="Since last restart"
-        />
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader>
+          <CardTitle className="text-lg">System Analytics</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <MetricCard
+            icon={Server}
+            title="System Status"
+            value={systemStatus.status}
+            deltaText={`Last Updated: ${lastUpdated}`}
+          />
+          <MetricCard
+            icon={Database}
+            title="Version"
+            value={systemStatus.version}
+            deltaText="Latest"
+          />
+          <MetricCard
+            icon={Users}
+            title="Active Services"
+            value={systemStatus.activeServices.length.toString()}
+            deltaText="Running"
+          />
+          <MetricCard
+            icon={ShieldAlert}
+            title="Active Threats"
+            value={activeThreatCount.toString()}
+            deltaText={activeThreatCount === 0 ? "System Protected" : "Requires Attention"}
+          />
+          <MetricCard
+            icon={Clock}
+            title="Uptime"
+            value={`${(systemStatus.uptime / 3600).toFixed(2)} hours`}
+            deltaText="Since last restart"
+          />
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ThreatDistribution data={threats} loading={loading} />
+        <RiskLevelDistribution data={threats} loading={loading} />
+        <DetectionAccuracy data={threats} loading={loading} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ResponseTimeAnalysis data={threats} loading={loading} />
+        <SourceBreakdown data={logs} loading={loading} />
+      </div>
+
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader>
+          <CardTitle>Detection Timeline</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DetectionTimeline data={threats} loading={loading} />
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <SourceActivityTimeline data={logs} loading={loading} />
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle>Anomaly Score Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AnomalyScoreChart data={threats} loading={loading} />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 
