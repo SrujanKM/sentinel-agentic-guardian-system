@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { 
   AlertTriangle, Shield, Lock, Server, User, 
   AlertCircle, ExternalLink, CheckCircle, Clock, 
-  RefreshCw, Filter, ChevronLeft, ChevronRight
+  RefreshCw, Filter, ChevronLeft, ChevronRight, ShieldAlert
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { triggerAction } from "@/services/api";
@@ -15,7 +16,7 @@ import AzureLogSimulator from "@/services/azureLogSimulator";
 
 const THREATS_PER_PAGE = 5;
 
-const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
+const ThreatTimeline = ({ threats, onThreatSelect, expanded = false, onThreatStatusChange }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -86,7 +87,21 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
         }
       });
       
+      // Update the threat status
       threat.status = "resolved";
+      
+      // Call the parent component's handler to update threat status
+      if (onThreatStatusChange) {
+        const updatedThreats = threats.map(t => 
+          t.id === threat.id ? { ...t, status: "resolved" } : t
+        );
+        onThreatStatusChange(updatedThreats);
+      }
+      
+      toast({
+        title: "Threat Resolved",
+        description: "The threat has been marked as resolved",
+      });
       
     } catch (error) {
       console.error("Failed to resolve threat:", error);
@@ -139,11 +154,17 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
 
   const totalPages = Math.ceil(sortedThreats.length / THREATS_PER_PAGE);
   const paginatedThreats = expanded 
-    ? sortedThreats
+    ? sortedThreats.slice(
+        currentPage * THREATS_PER_PAGE, 
+        (currentPage + 1) * THREATS_PER_PAGE
+      )
     : sortedThreats.slice(
         currentPage * THREATS_PER_PAGE, 
         (currentPage + 1) * THREATS_PER_PAGE
       );
+
+  // Calculate active threat count (non-resolved threats)
+  const activeThreatsCount = sortedThreats.filter(threat => threat.status !== "resolved").length;
 
   return (
     <Card className="bg-gray-900 border-gray-800 shadow-lg">
@@ -152,11 +173,18 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
           <CardTitle className="text-lg flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-500" />
             Threat Timeline
-            {!expanded && sortedThreats.length > 0 && (
-              <Badge variant="outline" className="ml-2">
-                {sortedThreats.length} total
-              </Badge>
-            )}
+            <div className="flex gap-2">
+              {sortedThreats.length > 0 && (
+                <Badge variant="outline" className="ml-2">
+                  {sortedThreats.length} total
+                </Badge>
+              )}
+              {activeThreatsCount > 0 && (
+                <Badge className="bg-red-600 text-white border-red-600">
+                  {activeThreatsCount} active
+                </Badge>
+              )}
+            </div>
           </CardTitle>
           
           <div className="flex gap-2 items-center">
@@ -375,7 +403,7 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
         </div>
       </CardContent>
       
-      {!expanded && totalPages > 1 && (
+      {totalPages > 1 && (
         <CardFooter className="flex justify-between items-center pt-2 pb-3">
           <div className="text-xs text-gray-400">
             Showing {currentPage * THREATS_PER_PAGE + 1}-{Math.min((currentPage + 1) * THREATS_PER_PAGE, sortedThreats.length)} of {sortedThreats.length}

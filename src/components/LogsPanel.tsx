@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,24 +13,159 @@ import { Button } from "@/components/ui/button";
 import { fetchLogs } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import AzureLogSimulator from "@/services/azureLogSimulator";
+import { v4 as uuidv4 } from 'uuid';
+
+const realisticLogMessages = {
+  info: [
+    "User authentication successful from IP 192.168.1.45",
+    "System update completed successfully: Security patches v2.3.1 applied",
+    "Scheduled backup completed for database 'SecurityLogs'",
+    "New user 'john.smith' created in Active Directory",
+    "SSL certificate renewed for domain 'security.example.com'",
+    "Access granted to resource 'Finance Reports' for user 'sarah.johnson'",
+    "System health check completed: All services running normally",
+    "Firewall rules updated successfully",
+    "User password reset completed for 'michael.brown@example.com'",
+    "Resource sharing enabled between security groups 'Analysis' and 'Response'"
+  ],
+  warning: [
+    "Multiple failed login attempts detected for user 'admin' from IP 103.45.67.89",
+    "Unusual network traffic detected from workstation WS-003 (192.168.2.35)",
+    "Resource utilization at 85% threshold for database server DB-001",
+    "Certificate expiration approaching for 'api.example.com' (15 days remaining)",
+    "Unusual working hours login detected for user 'alex.wong' at 02:34 AM",
+    "Elevated privilege use detected for service account 'svc-backup'",
+    "File integrity check found modified system files in /etc/security/",
+    "Network scanning activity detected from internal IP 192.168.5.123",
+    "Abnormal authentication pattern detected: 25 logins across different accounts from same IP",
+    "Unusual outbound traffic volume detected to IP range 78.45.12.0/24"
+  ],
+  error: [
+    "Brute force attack detected targeting admin portal from IP 45.86.123.29",
+    "Malware 'Trojan.Emotet' detected on host WKSTN-045, quarantine failed",
+    "Authentication server unavailable - Failover activated",
+    "Critical vulnerability CVE-2023-8756 detected on server SRV-DB-003",
+    "Data exfiltration attempt blocked: 2.3GB upload to unrecognized domain",
+    "Ransomware activity detected on file server FS-001, initiating isolation protocols",
+    "Suspicious PowerShell script execution detected with encoded payload",
+    "Firewall bypass attempt detected from internal network 192.168.10.0/24",
+    "DDoS attack in progress targeting public API endpoint",
+    "Privilege escalation detected: User 'guest' attempted admin access on SRV-AUTH-001"
+  ]
+};
+
+const getRealisticLogDetails = (level, source) => {
+  const details = {};
+  
+  // Add realistic user information
+  if (source.includes("ActiveDirectory") || source.includes("KeyVault")) {
+    const usernames = ['alex.smith', 'sarah.johnson', 'michael.brown', 'david.miller', 'emma.wilson'];
+    details.user = usernames[Math.floor(Math.random() * usernames.length)];
+  }
+  
+  // Add IP addresses
+  if (source.includes("Network") || source.includes("Firewall") || source.includes("Login")) {
+    details.ip_address = `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+    
+    if (level === "error" || level === "warning") {
+      details.related_threat = true;
+    }
+  }
+  
+  // Add more specific details depending on the source and level
+  if (source.includes("SecurityCenter")) {
+    details.protocol = ["TCP", "UDP", "HTTP", "HTTPS"][Math.floor(Math.random() * 4)];
+    details.port = [80, 443, 22, 3389, 8080, 25][Math.floor(Math.random() * 6)];
+    
+    if (level === "error") {
+      details.indicators_of_compromise = [
+        "User-Agent: Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)",
+        `IP: ${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+        "Hash: 5f4dcc3b5aa765d61d8327deb882cf99"
+      ];
+      details.actions_taken = [
+        "Connection blocked",
+        "Alert triggered",
+        "SIEM event created"
+      ];
+    }
+  }
+  
+  if (source.includes("VirtualMachines")) {
+    details.event_id = Math.floor(Math.random() * 9000) + 1000;
+    details.vm_name = ["srv-web-01", "srv-db-02", "srv-app-03", "srv-auth-01"][Math.floor(Math.random() * 4)];
+  }
+  
+  if (source.includes("KeyVault")) {
+    details.resource_id = `/subscriptions/${uuidv4()}/resourceGroups/SecurityRG/providers/Microsoft.KeyVault/vaults/MainSecrets`;
+    details.operation = ["read", "write", "delete", "list"][Math.floor(Math.random() * 4)];
+  }
+  
+  if (source.includes("Storage")) {
+    details.blob_name = ["security-config.json", "users.db", "firewall-rules.xml", "certificates.pem"][Math.floor(Math.random() * 4)];
+    details.operation = ["read", "write", "delete"][Math.floor(Math.random() * 3)];
+  }
+  
+  return details;
+};
 
 const LogsPanel = ({ logs = [] }) => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [localLogs, setLocalLogs] = useState(logs);
+  const [localLogs, setLocalLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterLevel, setFilterLevel] = useState("");
   const [filterSource, setFilterSource] = useState("");
   
   useEffect(() => {
-    setLocalLogs(logs);
+    // Process incoming logs to ensure they have realistic content
+    const processedLogs = logs.map(log => {
+      // Only replace generic messages with realistic ones
+      if (!log.message || log.message.includes("Lorem ipsum") || log.message.includes("Cotidie")) {
+        const logLevel = log.level || "info";
+        const messages = realisticLogMessages[logLevel] || realisticLogMessages.info;
+        const newMessage = messages[Math.floor(Math.random() * messages.length)];
+        
+        // Generate realistic details based on log level and source
+        const enhancedDetails = getRealisticLogDetails(logLevel, log.source || "");
+        
+        return {
+          ...log,
+          message: newMessage,
+          details: { ...(log.details || {}), ...enhancedDetails }
+        };
+      }
+      return log;
+    });
+    
+    setLocalLogs(processedLogs);
   }, [logs]);
 
   useEffect(() => {
     const refreshInterval = setInterval(async () => {
       try {
         const newLogs = await fetchLogs();
-        setLocalLogs(newLogs);
+        
+        // Process new logs to ensure they have realistic content
+        const processedNewLogs = newLogs.map(log => {
+          if (!log.message || log.message.includes("Lorem ipsum") || log.message.includes("Cotidie")) {
+            const logLevel = log.level || "info";
+            const messages = realisticLogMessages[logLevel] || realisticLogMessages.info;
+            const newMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            // Generate realistic details based on log level and source
+            const enhancedDetails = getRealisticLogDetails(logLevel, log.source || "");
+            
+            return {
+              ...log,
+              message: newMessage,
+              details: { ...(log.details || {}), ...enhancedDetails }
+            };
+          }
+          return log;
+        });
+        
+        setLocalLogs(processedNewLogs);
       } catch (error) {
         console.error("Failed to refresh logs:", error);
       }
@@ -42,7 +178,28 @@ const LogsPanel = ({ logs = [] }) => {
     setLoading(true);
     try {
       const newLogs = await fetchLogs();
-      setLocalLogs(newLogs);
+      
+      // Process new logs to ensure they have realistic content
+      const processedNewLogs = newLogs.map(log => {
+        if (!log.message || log.message.includes("Lorem ipsum") || log.message.includes("Cotidie")) {
+          const logLevel = log.level || "info";
+          const messages = realisticLogMessages[logLevel] || realisticLogMessages.info;
+          const newMessage = messages[Math.floor(Math.random() * messages.length)];
+          
+          // Generate realistic details based on log level and source
+          const enhancedDetails = getRealisticLogDetails(logLevel, log.source || "");
+          
+          return {
+            ...log,
+            message: newMessage,
+            details: { ...(log.details || {}), ...enhancedDetails }
+          };
+        }
+        return log;
+      });
+      
+      setLocalLogs(processedNewLogs);
+      
       toast({
         title: "Logs Refreshed",
         description: `Loaded ${newLogs.length} log entries`
@@ -61,18 +218,18 @@ const LogsPanel = ({ logs = [] }) => {
   
   const filteredLogs = localLogs.filter(log => {
     const matchesSearch = 
-      log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.level.toLowerCase().includes(searchTerm.toLowerCase());
+      (log.message || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (log.source || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (log.level || "").toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesLevel = filterLevel ? log.level === filterLevel : true;
-    const matchesSource = filterSource ? log.source.includes(filterSource) : true;
+    const matchesSource = filterSource ? (log.source || "").includes(filterSource) : true;
     
     return matchesSearch && matchesLevel && matchesSource;
   });
 
   const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case "error":
         return "bg-red-500/20 text-red-400 border-red-600";
       case "warning":
@@ -85,7 +242,7 @@ const LogsPanel = ({ logs = [] }) => {
   };
   
   const getLogIcon = (level) => {
-    switch (level.toLowerCase()) {
+    switch (level?.toLowerCase()) {
       case "error":
         return <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />;
       case "warning":
@@ -98,7 +255,7 @@ const LogsPanel = ({ logs = [] }) => {
   };
   
   const getSourceBadge = (source) => {
-    const sourceType = source.toLowerCase();
+    const sourceType = source?.toLowerCase() || "";
     if (sourceType.includes("activedirectory")) {
       return <Badge className="bg-blue-500/20 text-blue-400 border-blue-600 text-xs">Azure AD</Badge>;
     } else if (sourceType.includes("securitycenter")) {
@@ -117,7 +274,7 @@ const LogsPanel = ({ logs = [] }) => {
   };
 
   const getSourceIcon = (source) => {
-    const sourceType = source.toLowerCase();
+    const sourceType = source?.toLowerCase() || "";
     if (sourceType.includes("activedirectory")) {
       return <User className="h-3 w-3 text-blue-400" />;
     } else if (sourceType.includes("securitycenter")) {
@@ -269,6 +426,21 @@ const LogsPanel = ({ logs = [] }) => {
                         </div>
                       </div>
                       <p className="text-white mt-1 break-words">{log.message}</p>
+                      
+                      {/* Display IoCs if available */}
+                      {log.details?.indicators_of_compromise && (
+                        <div className="mt-1 text-yellow-400 text-xs">
+                          <strong>Indicators of Compromise:</strong> {log.details.indicators_of_compromise.join(", ")}
+                        </div>
+                      )}
+                      
+                      {/* Display Actions if available */}
+                      {log.details?.actions_taken && (
+                        <div className="mt-1 text-blue-400 text-xs">
+                          <strong>Actions:</strong> {log.details.actions_taken.join(", ")}
+                        </div>
+                      )}
+                      
                       <div className="flex justify-between mt-1 text-gray-500">
                         <div className="flex items-center gap-1">
                           {log.details?.user && (

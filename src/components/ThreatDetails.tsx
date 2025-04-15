@@ -1,54 +1,39 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, ShieldAlert, ArrowRightCircle, CheckCircle, Clock, Server, User } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { 
+  AlertTriangle, Clock, Server, User, ScanLine, 
+  CheckCircle, AlertOctagon, Filter, Shield
+} from "lucide-react";
 import { triggerAction } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 import AzureLogSimulator from "@/services/azureLogSimulator";
 
-const ThreatDetails = ({ selectedThreat }) => {
+const ThreatDetails = ({ selectedThreat, onThreatStatusChange }) => {
   const { toast } = useToast();
+  const [isResponding, setIsResponding] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
-  const [isResolved, setIsResolved] = useState(false);
-
-  useEffect(() => {
-    if (selectedThreat) {
-      setIsResolved(selectedThreat.status === "resolved");
-      setIsResolving(false);
-    }
-  }, [selectedThreat?.id]);
 
   if (!selectedThreat) {
     return (
-      <Card className="bg-gray-900 border-gray-800 h-[400px]">
-        <CardHeader>
-          <CardTitle className="text-lg">Threat Details</CardTitle>
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            Threat Details
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
-          <div className="text-center text-gray-500">
-            <ShieldAlert className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p>Select a threat to view details</p>
-          </div>
+        <CardContent className="text-gray-400 text-sm py-8 text-center">
+          <Shield className="h-12 w-12 mx-auto mb-3 text-gray-700" />
+          <p>Select a threat to view details</p>
         </CardContent>
       </Card>
     );
   }
-
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return "text-red-500 bg-red-500/10";
-      case "investigating":
-        return "text-orange-500 bg-orange-500/10";
-      case "contained":
-        return "text-blue-500 bg-blue-500/10";
-      case "resolved":
-        return "text-green-500 bg-green-500/10";
-      default:
-        return "text-gray-500 bg-gray-500/10";
-    }
-  };
 
   const formatDateTime = (timestamp) => {
     if (!timestamp) return "Unknown date";
@@ -57,33 +42,43 @@ const ThreatDetails = ({ selectedThreat }) => {
 
   const handleRespondButton = async () => {
     try {
+      setIsResponding(true);
       await triggerAction({
         action_type: "respond_to_threat",
         threat_id: selectedThreat.id,
-        details: {
-          action: "automated_response",
-          notes: "Triggered by analyst"
-        }
       });
       
       toast({
         title: "Response Initiated",
-        description: `Automated response to ${selectedThreat.title} has been triggered.`,
+        description: "Automated response to threat has been initiated."
       });
+      
+      // Update the threat status to "investigating"
+      const updatedThreat = {
+        ...selectedThreat,
+        status: "investigating"
+      };
+      
+      // Notify parent component of the status change
+      if (onThreatStatusChange) {
+        onThreatStatusChange(updatedThreat);
+      }
+      
     } catch (error) {
-      console.error("Failed to trigger response:", error);
+      console.error("Failed to respond to threat:", error);
       toast({
         title: "Action Failed",
-        description: "Could not initiate response. Please try again.",
-        variant: "destructive",
+        description: "Could not respond to the threat. Please try again.",
+        variant: "destructive"
       });
+    } finally {
+      setIsResponding(false);
     }
   };
-
-  const handleMarkAsResolved = async () => {
-    setIsResolving(true);
-    
+  
+  const handleResolveButton = async () => {
     try {
+      setIsResolving(true);
       await triggerAction({
         action_type: "resolve_threat",
         threat_id: selectedThreat.id,
@@ -93,122 +88,194 @@ const ThreatDetails = ({ selectedThreat }) => {
         }
       });
       
-      setIsResolved(true);
-      selectedThreat.status = "resolved";
-      
       toast({
         title: "Threat Resolved",
-        description: `${selectedThreat.title} has been marked as resolved.`,
+        description: "Threat has been marked as resolved."
       });
+      
+      // Update the threat status to "resolved"
+      const updatedThreat = {
+        ...selectedThreat,
+        status: "resolved"
+      };
+      
+      // Notify parent component of the status change
+      if (onThreatStatusChange) {
+        onThreatStatusChange(updatedThreat);
+      }
+      
     } catch (error) {
       console.error("Failed to resolve threat:", error);
       toast({
         title: "Action Failed",
         description: "Could not resolve the threat. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsResolving(false);
     }
   };
 
-  const currentThreatResolved = isResolved || selectedThreat.status === "resolved";
+  const getStatusBadge = () => {
+    switch (selectedThreat.status.toLowerCase()) {
+      case "active":
+        return <Badge className="bg-red-500/20 text-red-400 border-red-600">Active</Badge>;
+      case "investigating":
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-600">Investigating</Badge>;
+      case "contained":
+        return <Badge className="bg-orange-500/20 text-orange-400 border-orange-600">Contained</Badge>;
+      case "resolved":
+        return <Badge className="bg-green-500/20 text-green-400 border-green-600">Resolved</Badge>;
+      default:
+        return <Badge>{selectedThreat.status}</Badge>;
+    }
+  };
+  
+  const getSeverityBadge = () => {
+    switch (selectedThreat.severity.toLowerCase()) {
+      case "critical":
+        return <Badge className="bg-red-500/20 text-red-400 border-red-600">Critical</Badge>;
+      case "high":
+        return <Badge className="bg-orange-500/20 text-orange-400 border-orange-600">High</Badge>;
+      case "medium":
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-600">Medium</Badge>;
+      case "low":
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-600">Low</Badge>;
+      default:
+        return <Badge>{selectedThreat.severity}</Badge>;
+    }
+  };
 
   return (
     <Card className="bg-gray-900 border-gray-800">
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{selectedThreat.title}</CardTitle>
-          <Badge className={getStatusColor(currentThreatResolved ? "resolved" : selectedThreat.status)}>
-            {currentThreatResolved ? "Resolved" : selectedThreat.status}
-          </Badge>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            Threat Details
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            {getStatusBadge()}
+            {getSeverityBadge()}
+          </div>
         </div>
       </CardHeader>
-
-      <CardContent className="space-y-4">
-        <p className="text-sm text-gray-300">{selectedThreat.description}</p>
-        
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="flex items-center gap-1 text-gray-400">
-            <AlertCircle className="h-3 w-3" />
-            <span>Severity: </span>
-            <span className="text-white">{selectedThreat.severity}</span>
-          </div>
-          <div className="flex items-center gap-1 text-gray-400">
-            <Clock className="h-3 w-3" />
-            <span>Detected: </span>
-            <span className="text-white" title={formatDateTime(selectedThreat.timestamp)}>
-              {formatDateTime(selectedThreat.timestamp)}
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-gray-400">
-            <Server className="h-3 w-3" />
-            <span>Source: </span>
-            <span className="text-white">{selectedThreat.source}</span>
-          </div>
-          <div className="flex items-center gap-1 text-gray-400">
-            <User className="h-3 w-3" />
-            <span>Related User: </span>
-            <span className="text-white">{selectedThreat.user || "Unknown"}</span>
-          </div>
-        </div>
-
-        {selectedThreat.indicators && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Indicators of Compromise</h4>
-            <div className="bg-gray-800 rounded-md p-2 text-xs space-y-1">
-              {selectedThreat.indicators.map((indicator, idx) => (
-                <div key={idx} className="flex items-start gap-1">
-                  <ArrowRightCircle className="h-3 w-3 text-emerald-400 mt-0.5" />
-                  <span className="text-gray-300">{indicator}</span>
-                </div>
-              ))}
+      
+      <CardContent className="p-0">
+        <ScrollArea className="h-[450px]">
+          <div className="p-4 space-y-4">
+            <div>
+              <h3 className="text-lg font-medium">{selectedThreat.title}</h3>
+              <p className="text-gray-400 text-sm mt-1">
+                {selectedThreat.description}
+              </p>
             </div>
-          </div>
-        )}
-
-        {selectedThreat.actions && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Automated Actions</h4>
-            <div className="bg-gray-800 rounded-md p-2 text-xs space-y-1">
-              {selectedThreat.actions.map((action, idx) => (
-                <div key={idx} className="flex items-start gap-1">
-                  <CheckCircle className="h-3 w-3 text-blue-400 mt-0.5" />
-                  <span className="text-gray-300">{action}</span>
-                </div>
-              ))}
+            
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div className="flex items-center gap-1">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-400">Detected:</span>
+              </div>
+              <div>{formatDateTime(selectedThreat.timestamp)}</div>
+              
+              <div className="flex items-center gap-1">
+                <Server className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-400">Source:</span>
+              </div>
+              <div>{selectedThreat.source}</div>
+              
+              <div className="flex items-center gap-1">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-400">Type:</span>
+              </div>
+              <div>{selectedThreat.type}</div>
+              
+              {selectedThreat.user && (
+                <>
+                  <div className="flex items-center gap-1">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-400">User:</span>
+                  </div>
+                  <div>{selectedThreat.user}</div>
+                </>
+              )}
             </div>
-          </div>
-        )}
-
-        <div className="flex gap-2 pt-2">
-          <Button 
-            size="sm" 
-            className="bg-emerald-600 hover:bg-emerald-700 flex-1"
-            onClick={handleRespondButton}
-            disabled={currentThreatResolved}
-          >
-            Respond
-          </Button>
-          <Button 
-            size="sm" 
-            variant={currentThreatResolved ? "default" : "outline"} 
-            className={`flex-1 ${
-              currentThreatResolved 
-                ? "bg-green-600 hover:bg-green-700 text-white" 
-                : "border-blue-500 text-blue-400 hover:bg-blue-500/10"
-            }`}
-            onClick={handleMarkAsResolved}
-            disabled={currentThreatResolved || isResolving}
-          >
-            {isResolving ? "Processing..." : (
-              <>
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Mark as Resolved
-              </>
+            
+            <Separator />
+            
+            {selectedThreat.indicators && selectedThreat.indicators.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-2 flex items-center">
+                  <AlertOctagon className="h-4 w-4 mr-1 text-yellow-500" />
+                  Indicators of Compromise
+                </h4>
+                <div className="bg-gray-800 rounded-md p-2 text-sm">
+                  <ul className="list-disc list-inside space-y-1 text-gray-300">
+                    {selectedThreat.indicators.map((indicator, index) => (
+                      <li key={index}>{indicator}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             )}
-          </Button>
-        </div>
+            
+            {selectedThreat.actions && selectedThreat.actions.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-2 flex items-center">
+                  <ScanLine className="h-4 w-4 mr-1 text-blue-500" />
+                  Recommended Actions
+                </h4>
+                <div className="bg-gray-800 rounded-md p-2 text-sm">
+                  <ul className="list-disc list-inside space-y-1 text-gray-300">
+                    {selectedThreat.actions.map((action, index) => (
+                      <li key={index}>{action}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            
+            <div className="pt-2 flex gap-2 justify-end">
+              {selectedThreat.status !== "resolved" && (
+                <>
+                  {selectedThreat.status === "active" && (
+                    <Button 
+                      size="sm" 
+                      className="bg-blue-600 hover:bg-blue-700"
+                      onClick={handleRespondButton}
+                      disabled={isResponding}
+                    >
+                      {isResponding ? (
+                        <>Processing...</>
+                      ) : (
+                        <>
+                          <ScanLine className="h-4 w-4 mr-1" />
+                          Respond Automatically
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    size="sm" 
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={handleResolveButton}
+                    disabled={isResolving}
+                  >
+                    {isResolving ? (
+                      <>Processing...</>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Mark as Resolved
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

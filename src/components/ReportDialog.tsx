@@ -7,16 +7,18 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, FileSpreadsheet, Download } from "lucide-react";  // Changed FilePdf to FileText
+import { FileText, FileSpreadsheet, Download } from "lucide-react";
 import reportGenerator, { ReportOptions, defaultReportOptions } from "@/services/reportGenerator";
 import { fetchLogs, fetchThreats } from "@/services/api";
 
 interface ReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  threats?: any[];
+  logs?: any[];
 }
 
-const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
+const ReportDialog = ({ open, onOpenChange, threats = [], logs = [] }: ReportDialogProps) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [options, setOptions] = useState<ReportOptions>({...defaultReportOptions});
@@ -26,17 +28,37 @@ const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
       setIsGenerating(true);
       
       toast({
-        title: "Fetching data...",
-        description: "Please wait while we gather data for your report."
+        title: "Preparing report...",
+        description: "Please wait while we generate your report."
       });
       
-      // Fetch the required data
-      const [threats, logs] = await Promise.all([
-        fetchThreats(),
-        fetchLogs({ limit: 500 })
-      ]);
+      // If there are no threats or logs passed, fetch them
+      let reportThreats = threats;
+      let reportLogs = logs;
       
-      await reportGenerator.generateReport(threats, logs, options);
+      if (!reportThreats.length || !reportLogs.length) {
+        try {
+          toast({
+            title: "Fetching data...",
+            description: "Please wait while we gather data for your report."
+          });
+          
+          // Fetch the required data
+          const [fetchedThreats, fetchedLogs] = await Promise.all([
+            fetchThreats(),
+            fetchLogs({ limit: 500 })
+          ]);
+          
+          reportThreats = fetchedThreats;
+          reportLogs = fetchedLogs;
+        } catch (error) {
+          console.error("Failed to fetch data for report:", error);
+          // In case of fetch error, continue with whatever data we have
+        }
+      }
+      
+      // Generate the report with the available data
+      await reportGenerator.generateReport(reportThreats, reportLogs, options);
       
       toast({
         title: "Report Generated",
@@ -84,7 +106,7 @@ const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
                   <div className="flex items-center space-x-2 rounded-md border border-gray-700 p-3 hover:bg-gray-800">
                     <RadioGroupItem value="pdf" id="pdf" />
                     <Label htmlFor="pdf" className="flex items-center cursor-pointer">
-                      <FileText className="mr-2 h-5 w-5 text-red-500" /> {/* Changed from FilePdf to FileText */}
+                      <FileText className="mr-2 h-5 w-5 text-red-500" />
                       PDF Document
                     </Label>
                   </div>
