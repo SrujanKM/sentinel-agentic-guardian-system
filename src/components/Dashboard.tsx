@@ -11,7 +11,7 @@ import AnalyticsModule from "./analytics/AnalyticsModule";
 import ReportDialog from "./ReportDialog";
 import { fetchLogs, fetchThreats } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Download as FileDownload, ShieldAlert } from "lucide-react";
+import { Download, Download as FileDownload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
@@ -105,14 +105,6 @@ const Dashboard = () => {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           <h2 className="text-xl font-semibold">Security Dashboard</h2>
-          {activeThreatCount > 0 && (
-            <div className="ml-4 flex items-center">
-              <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-md flex items-center">
-                <ShieldAlert className="h-3 w-3 mr-1" />
-                {activeThreatCount} Active Threat{activeThreatCount !== 1 ? 's' : ''}
-              </span>
-            </div>
-          )}
         </div>
         <Button 
           className="bg-blue-600 hover:bg-blue-700"

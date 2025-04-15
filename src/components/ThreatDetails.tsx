@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,13 +52,11 @@ const ThreatDetails = ({ selectedThreat, onThreatStatusChange }) => {
         description: "Automated response to threat has been initiated."
       });
       
-      // Update the threat status to "investigating"
       const updatedThreat = {
         ...selectedThreat,
         status: "investigating"
       };
       
-      // Notify parent component of the status change
       if (onThreatStatusChange) {
         onThreatStatusChange(updatedThreat);
       }
@@ -93,13 +90,11 @@ const ThreatDetails = ({ selectedThreat, onThreatStatusChange }) => {
         description: "Threat has been marked as resolved."
       });
       
-      // Update the threat status to "resolved"
       const updatedThreat = {
         ...selectedThreat,
         status: "resolved"
       };
       
-      // Notify parent component of the status change
       if (onThreatStatusChange) {
         onThreatStatusChange(updatedThreat);
       }

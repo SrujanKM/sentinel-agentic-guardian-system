@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +13,31 @@ import { fetchLogs } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import AzureLogSimulator from "@/services/azureLogSimulator";
 import { v4 as uuidv4 } from 'uuid';
+
+interface LogDetails {
+  user?: string;
+  ip_address?: string;
+  related_threat?: boolean;
+  protocol?: string;
+  port?: string;
+  indicators_of_compromise?: string[];
+  actions_taken?: string[];
+  event_id?: number;
+  vm_name?: string;
+  resource_id?: string;
+  operation?: string;
+  blob_name?: string;
+  location?: string;
+}
+
+interface Log {
+  id: string;
+  timestamp: string;
+  level: string;
+  message: string;
+  source: string;
+  details: LogDetails;
+}
 
 const realisticLogMessages = {
   info: [
@@ -57,13 +81,11 @@ const realisticLogMessages = {
 const getRealisticLogDetails = (level, source) => {
   const details = {};
   
-  // Add realistic user information
   if (source.includes("ActiveDirectory") || source.includes("KeyVault")) {
     const usernames = ['alex.smith', 'sarah.johnson', 'michael.brown', 'david.miller', 'emma.wilson'];
     details.user = usernames[Math.floor(Math.random() * usernames.length)];
   }
   
-  // Add IP addresses
   if (source.includes("Network") || source.includes("Firewall") || source.includes("Login")) {
     details.ip_address = `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
     
@@ -72,7 +94,6 @@ const getRealisticLogDetails = (level, source) => {
     }
   }
   
-  // Add more specific details depending on the source and level
   if (source.includes("SecurityCenter")) {
     details.protocol = ["TCP", "UDP", "HTTP", "HTTPS"][Math.floor(Math.random() * 4)];
     details.port = [80, 443, 22, 3389, 8080, 25][Math.floor(Math.random() * 6)];
@@ -118,15 +139,12 @@ const LogsPanel = ({ logs = [] }) => {
   const [filterSource, setFilterSource] = useState("");
   
   useEffect(() => {
-    // Process incoming logs to ensure they have realistic content
     const processedLogs = logs.map(log => {
-      // Only replace generic messages with realistic ones
       if (!log.message || log.message.includes("Lorem ipsum") || log.message.includes("Cotidie")) {
         const logLevel = log.level || "info";
         const messages = realisticLogMessages[logLevel] || realisticLogMessages.info;
         const newMessage = messages[Math.floor(Math.random() * messages.length)];
         
-        // Generate realistic details based on log level and source
         const enhancedDetails = getRealisticLogDetails(logLevel, log.source || "");
         
         return {
@@ -146,14 +164,12 @@ const LogsPanel = ({ logs = [] }) => {
       try {
         const newLogs = await fetchLogs();
         
-        // Process new logs to ensure they have realistic content
         const processedNewLogs = newLogs.map(log => {
           if (!log.message || log.message.includes("Lorem ipsum") || log.message.includes("Cotidie")) {
             const logLevel = log.level || "info";
             const messages = realisticLogMessages[logLevel] || realisticLogMessages.info;
             const newMessage = messages[Math.floor(Math.random() * messages.length)];
             
-            // Generate realistic details based on log level and source
             const enhancedDetails = getRealisticLogDetails(logLevel, log.source || "");
             
             return {
@@ -179,14 +195,12 @@ const LogsPanel = ({ logs = [] }) => {
     try {
       const newLogs = await fetchLogs();
       
-      // Process new logs to ensure they have realistic content
       const processedNewLogs = newLogs.map(log => {
         if (!log.message || log.message.includes("Lorem ipsum") || log.message.includes("Cotidie")) {
           const logLevel = log.level || "info";
           const messages = realisticLogMessages[logLevel] || realisticLogMessages.info;
           const newMessage = messages[Math.floor(Math.random() * messages.length)];
           
-          // Generate realistic details based on log level and source
           const enhancedDetails = getRealisticLogDetails(logLevel, log.source || "");
           
           return {
@@ -427,14 +441,12 @@ const LogsPanel = ({ logs = [] }) => {
                       </div>
                       <p className="text-white mt-1 break-words">{log.message}</p>
                       
-                      {/* Display IoCs if available */}
                       {log.details?.indicators_of_compromise && (
                         <div className="mt-1 text-yellow-400 text-xs">
                           <strong>Indicators of Compromise:</strong> {log.details.indicators_of_compromise.join(", ")}
                         </div>
                       )}
                       
-                      {/* Display Actions if available */}
                       {log.details?.actions_taken && (
                         <div className="mt-1 text-blue-400 text-xs">
                           <strong>Actions:</strong> {log.details.actions_taken.join(", ")}

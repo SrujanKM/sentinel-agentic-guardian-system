@@ -44,15 +44,15 @@ const ThreatDistribution: React.FC<ThreatDistributionProps> = ({ data, loading }
   
   const chartData = processData();
   
-  // Define colors for each threat type
+  // Define vibrant colors for each threat type
   const COLORS = {
-    'Malware': '#ef4444',
-    'Brute force': '#f97316',
-    'Unauthorized access': '#eab308',
-    'Privilege escalation': '#a855f7',
-    'Data exfiltration': '#3b82f6',
-    'Anomaly': '#0ea5e9',
-    'Unknown': '#6b7280'
+    'Malware': '#ff4d4f',
+    'Brute force': '#ff7a45',
+    'Unauthorized access': '#ffc53d',
+    'Privilege escalation': '#9254de',
+    'Data exfiltration': '#4096ff',
+    'Anomaly': '#36cfc9',
+    'Unknown': '#8c8c8c'
   };
   
   // Get icon for threat type
