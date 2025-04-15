@@ -8,8 +8,11 @@ import LogsPanel from "./LogsPanel";
 import ThreatDetails from "./ThreatDetails";
 import BackendStatus from "./BackendStatus";
 import AnalyticsModule from "./analytics/AnalyticsModule";
+import ReportDialog from "./ReportDialog";
 import { fetchLogs, fetchThreats } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { Download, Download as FileDownload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -18,6 +21,7 @@ const Dashboard = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   
   const handleThreatSelect = (threat) => {
     setSelectedThreat(threat);
@@ -82,6 +86,17 @@ const Dashboard = () => {
 
   return (
     <div className="flex-1 container mx-auto p-4 overflow-hidden">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Security Dashboard</h2>
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setReportDialogOpen(true)}
+        >
+          <FileDownload className="mr-2 h-4 w-4" />
+          Generate Report
+        </Button>
+      </div>
+      
       <div className="grid grid-cols-12 gap-4 h-[calc(100vh-72px)]">
         {/* Main Content */}
         <div className="col-span-12 lg:col-span-8 space-y-4 overflow-y-auto pr-2">
@@ -130,6 +145,12 @@ const Dashboard = () => {
           <LogsPanel logs={logs} />
         </div>
       </div>
+      
+      {/* Report Dialog */}
+      <ReportDialog 
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+      />
     </div>
   );
 };
