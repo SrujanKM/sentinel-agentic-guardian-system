@@ -1,3 +1,4 @@
+
 import { faker } from '@faker-js/faker';
 import { format, formatDistanceToNow } from 'date-fns';
 
@@ -27,6 +28,7 @@ interface Threat {
 class AzureLogSimulator {
   private logs: LogEntry[];
   private generatedThreats: Threat[];
+  private continousThreatGenerationInterval: NodeJS.Timeout | null = null;
 
   // Log generation methods
   private generateRandomLog(): LogEntry {
@@ -46,31 +48,31 @@ class AzureLogSimulator {
       details = {
         user: faker.internet.userName(),
         ip_address: faker.internet.ip(),
-        location: faker.address.country()
+        location: faker.location.country()
       };
     } else if (source === "SecurityCenter/Firewall") {
       message = `Firewall blocked traffic from ${faker.internet.ip()} to ${faker.internet.ip()}`;
       details = {
         protocol: faker.internet.protocol(),
-        port: faker.internet.port()
+        port: faker.internet.port().toString()
       };
     } else if (source === "NetworkWatcher/FlowLog") {
       details = {
         source_ip: faker.internet.ip(),
         dest_ip: faker.internet.ip(),
-        bytes_sent: faker.datatype.number(),
-        packets_sent: faker.datatype.number()
+        bytes_sent: faker.number.int(),
+        packets_sent: faker.number.int()
       };
     } else if (source === "KeyVault/Access") {
       details = {
         user: faker.internet.userName(),
-        resource_id: `/subscriptions/${faker.datatype.uuid()}/resourceGroups/${faker.company.name()}/providers/Microsoft.KeyVault/vaults/${faker.word.noun()}`,
+        resource_id: `/subscriptions/${faker.string.uuid()}/resourceGroups/${faker.company.name()}/providers/Microsoft.KeyVault/vaults/${faker.word.noun()}`,
         result: faker.helpers.arrayElement(['success', 'failure'])
       };
     } else if (source === "VirtualMachines/SystemEvents") {
       message = `System event occurred on VM: ${faker.word.noun()}`;
       details = {
-        event_id: faker.datatype.number(),
+        event_id: faker.number.int(),
         severity: faker.helpers.arrayElement(['critical', 'warning', 'info'])
       };
     } else if (source === "StorageAccount/BlobAccess") {
@@ -82,7 +84,7 @@ class AzureLogSimulator {
     }
 
     return {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       timestamp: this.generateRandomTimestamp(),
       level: level,
       message: message,
@@ -149,12 +151,12 @@ class AzureLogSimulator {
       actions = ["Block network traffic", "Isolate server"];
     } else if (type === "Anomaly") {
       description = `Anomalous activity detected on network ${faker.word.noun()}`;
-      indicators = [faker.datatype.number().toString()];
+      indicators = [faker.number.int().toString()];
       actions = ["Analyze network traffic", "Check system health"];
     }
 
     const threat: Threat = {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       timestamp: this.generateRandomTimestamp(hoursBack),
       title: `${type} Alert`,
       description: description,
@@ -237,8 +239,6 @@ class AzureLogSimulator {
   }
 
   // Add a method for continuous threat generation
-  private continousThreatGenerationInterval: NodeJS.Timeout | null = null;
-
   public startContinuousThreatGeneration(): void {
     // Clear any existing interval
     if (this.continousThreatGenerationInterval) {

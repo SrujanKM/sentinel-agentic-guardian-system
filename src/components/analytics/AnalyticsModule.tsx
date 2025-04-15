@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { fetchLogs, fetchThreats, fetchSystemStats } from "@/services/api";
+import { fetchLogs, fetchThreats, fetchSystemStatus } from "@/services/api";
 import ThreatDistribution from "./ThreatDistribution";
 import AnomalyScoreChart from "./AnomalyScoreChart";
 import DetectionTimeline from "./DetectionTimeline";
@@ -30,7 +30,7 @@ const AnalyticsModule = () => {
       const [logsData, threatsData, statsData] = await Promise.all([
         fetchLogs({ limit: 500 }),
         fetchThreats({ limit: 100 }),
-        fetchSystemStats()
+        fetchSystemStatus()
       ]);
       
       setLogs(logsData);
