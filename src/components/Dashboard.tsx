@@ -11,7 +11,7 @@ import AnalyticsModule from "./analytics/AnalyticsModule";
 import ReportDialog from "./ReportDialog";
 import { fetchLogs, fetchThreats } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Download as FileDownload } from "lucide-react";
+import { Download, Download as FileDownload, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
@@ -22,6 +22,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [activeThreatCount, setActiveThreatCount] = useState(0);
   
   const handleThreatSelect = (threat) => {
     setSelectedThreat(threat);
@@ -37,13 +38,28 @@ const Dashboard = () => {
         ]);
         
         setThreats(threatsData);
+        
+        // Calculate active threat count (excluding resolved threats)
+        const activeThreats = threatsData.filter(threat => 
+          threat.status !== "resolved"
+        );
+        setActiveThreatCount(activeThreats.length);
+        
         setLogs(logsData);
       } catch (err) {
         console.error("Error fetching data:", err);
         
         // Load mock data if API fails (silently, no error message to user)
         import("@/data/mockData").then(({ mockThreats, mockLogs }) => {
-          setThreats(mockThreats.slice(0, 15));
+          const threats = mockThreats.slice(0, 15);
+          setThreats(threats);
+          
+          // Calculate active threat count from mock data
+          const activeThreats = threats.filter(threat => 
+            threat.status !== "resolved"
+          );
+          setActiveThreatCount(activeThreats.length);
+          
           setLogs(mockLogs.slice(0, 20));
         });
       } finally {
@@ -87,7 +103,17 @@ const Dashboard = () => {
   return (
     <div className="flex-1 container mx-auto p-4 overflow-hidden">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Security Dashboard</h2>
+        <div className="flex items-center">
+          <h2 className="text-xl font-semibold">Security Dashboard</h2>
+          {activeThreatCount > 0 && (
+            <div className="ml-4 flex items-center">
+              <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-md flex items-center">
+                <ShieldAlert className="h-3 w-3 mr-1" />
+                {activeThreatCount} Active Threat{activeThreatCount !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
+        </div>
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
           onClick={() => setReportDialogOpen(true)}
@@ -110,10 +136,17 @@ const Dashboard = () => {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
-              <SystemMonitor />
+              <SystemMonitor activeThreatCount={activeThreatCount} />
               <ThreatTimeline 
                 threats={threats} 
-                onThreatSelect={handleThreatSelect} 
+                onThreatSelect={handleThreatSelect}
+                onThreatStatusChange={(updatedThreats) => {
+                  setThreats(updatedThreats);
+                  const activeThreats = updatedThreats.filter(threat => 
+                    threat.status !== "resolved"
+                  );
+                  setActiveThreatCount(activeThreats.length);
+                }}
               />
             </TabsContent>
             
@@ -122,6 +155,13 @@ const Dashboard = () => {
                 threats={threats} 
                 onThreatSelect={handleThreatSelect}
                 expanded={true}
+                onThreatStatusChange={(updatedThreats) => {
+                  setThreats(updatedThreats);
+                  const activeThreats = updatedThreats.filter(threat => 
+                    threat.status !== "resolved"
+                  );
+                  setActiveThreatCount(activeThreats.length);
+                }}
               />
             </TabsContent>
 
@@ -134,14 +174,29 @@ const Dashboard = () => {
             </TabsContent>
 
             <TabsContent value="analytics">
-              <AnalyticsModule />
+              <AnalyticsModule activeThreatCount={activeThreatCount} />
             </TabsContent>
           </Tabs>
         </div>
 
         {/* Sidebar - Threat Details and Logs */}
         <div className="col-span-12 lg:col-span-4 space-y-4 overflow-y-auto pb-4 pr-2">
-          <ThreatDetails selectedThreat={selectedThreat} />
+          <ThreatDetails 
+            selectedThreat={selectedThreat}
+            onThreatStatusChange={(updatedThreat) => {
+              // Update the status of this threat in the threats array
+              const updatedThreats = threats.map(threat => 
+                threat.id === updatedThreat.id ? updatedThreat : threat
+              );
+              setThreats(updatedThreats);
+              
+              // Recalculate active threat count
+              const activeThreats = updatedThreats.filter(threat => 
+                threat.status !== "resolved"
+              );
+              setActiveThreatCount(activeThreats.length);
+            }} 
+          />
           <LogsPanel logs={logs} />
         </div>
       </div>
@@ -150,6 +205,8 @@ const Dashboard = () => {
       <ReportDialog 
         open={reportDialogOpen}
         onOpenChange={setReportDialogOpen}
+        threats={threats}
+        logs={logs}
       />
     </div>
   );
