@@ -1,4 +1,3 @@
-
 import { faker } from '@faker-js/faker';
 import { format, formatDistanceToNow } from 'date-fns';
 
@@ -30,7 +29,40 @@ class AzureLogSimulator {
   private generatedThreats: Threat[];
   private continousThreatGenerationInterval: NodeJS.Timeout | null = null;
 
-  // Log generation methods
+  static formatToIST(timestamp: string): string {
+    try {
+      // Parse the ISO timestamp
+      const date = new Date(timestamp);
+      
+      // Format date in a readable format (day month year, hour:minute:second AM/PM)
+      // First, adjust for IST by subtracting 5.5 hours from UTC time
+      // This ensures times are properly aligned with IST without relying on timezone conversion
+      const adjustedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000));
+      
+      // Format with date-fns
+      return format(adjustedDate, "dd MMM yyyy, h:mm:ss a 'IST'");
+    } catch (error) {
+      console.error("Error formatting timestamp to IST:", error);
+      return "Invalid date";
+    }
+  }
+
+  static formatTimeAgo(timestamp: string): string {
+    try {
+      // Parse the ISO timestamp
+      const date = new Date(timestamp);
+      
+      // Adjust for IST by subtracting 5.5 hours from UTC time
+      const adjustedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000));
+      
+      // Calculate time ago using the adjusted date
+      return formatDistanceToNow(adjustedDate, { addSuffix: true });
+    } catch (error) {
+      console.error("Error calculating time ago:", error);
+      return "Unknown time";
+    }
+  }
+
   private generateRandomLog(): LogEntry {
     const level = faker.helpers.arrayElement(['info', 'warning', 'error']);
     let message = faker.lorem.sentence();
@@ -103,7 +135,6 @@ class AzureLogSimulator {
     return this.logs;
   }
 
-  // Threat generation methods
   private generateRandomThreat(hoursBack: number = 24): void {
     const type = faker.helpers.arrayElement([
       "Malware",
@@ -176,43 +207,6 @@ class AzureLogSimulator {
     return this.generatedThreats;
   }
 
-  // Update the formatToIST method to properly handle IST timezone (subtract 5.5 hours)
-  public static formatToIST(timestamp: string): string {
-    try {
-      // Parse the ISO timestamp
-      const date = new Date(timestamp);
-      
-      // Format date in a readable format (day month year, hour:minute:second AM/PM)
-      // First, adjust for IST by subtracting 5.5 hours from UTC time
-      // This ensures times are properly aligned with IST without relying on timezone conversion
-      const adjustedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000));
-      
-      // Format with date-fns
-      return format(adjustedDate, "dd MMM yyyy, h:mm:ss a 'IST'");
-    } catch (error) {
-      console.error("Error formatting timestamp to IST:", error);
-      return "Invalid date";
-    }
-  }
-
-  // Update the formatTimeAgo method to use the adjusted IST time
-  public static formatTimeAgo(timestamp: string): string {
-    try {
-      // Parse the ISO timestamp
-      const date = new Date(timestamp);
-      
-      // Adjust for IST by subtracting 5.5 hours from UTC time
-      const adjustedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000));
-      
-      // Calculate time ago using the adjusted date
-      return formatDistanceToNow(adjustedDate, { addSuffix: true });
-    } catch (error) {
-      console.error("Error calculating time ago:", error);
-      return "Unknown time";
-    }
-  }
-
-  // Update the generateRandomTimestamp method to ensure timestamps are in the past
   private generateRandomTimestamp(hoursBack: number = 24): string {
     const now = new Date();
     // Generate a random time in the past (up to hoursBack hours ago)
@@ -221,7 +215,6 @@ class AzureLogSimulator {
     return new Date(randomTime).toISOString();
   }
 
-  // Update the initialize method to generate threats at startup
   public initialize(): void {
     // Generate initial batch of threats (5-8)
     const initialThreatCount = Math.floor(Math.random() * 4) + 5; // 5-8 threats
@@ -238,7 +231,6 @@ class AzureLogSimulator {
     this.generateRandomLogs(10);
   }
 
-  // Add a method for continuous threat generation
   public startContinuousThreatGeneration(): void {
     // Clear any existing interval
     if (this.continousThreatGenerationInterval) {
@@ -258,7 +250,6 @@ class AzureLogSimulator {
     }
   }
 
-  // Update constructor to initialize threats and continuous generation
   constructor() {
     this.logs = [];
     this.generatedThreats = [];

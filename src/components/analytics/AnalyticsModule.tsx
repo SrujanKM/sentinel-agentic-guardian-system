@@ -1,196 +1,85 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { fetchLogs, fetchThreats, fetchSystemStatus } from "@/services/api";
-import ThreatDistribution from "./ThreatDistribution";
-import AnomalyScoreChart from "./AnomalyScoreChart";
-import DetectionTimeline from "./DetectionTimeline";
-import RiskLevelDistribution from "./RiskLevelDistribution";
-import SourceBreakdown from "./SourceBreakdown";
-import DetectionAccuracy from "./DetectionAccuracy";
-import SourceActivityTimeline from "./SourceActivityTimeline";
-import ResponseTimeAnalysis from "./ResponseTimeAnalysis";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { MetricCard } from "@/components/ui/metric-card";
+import { Clock, Database, Server, ShieldAlert, Users } from "lucide-react";
 import AzureLogSimulator from "@/services/azureLogSimulator";
 
 const AnalyticsModule = () => {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [logs, setLogs] = useState([]);
-  const [threats, setThreats] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [logsData, threatsData, statsData] = await Promise.all([
-        fetchLogs({ limit: 500 }),
-        fetchThreats({ limit: 100 }),
-        fetchSystemStatus()
-      ]);
-      
-      setLogs(logsData);
-      setThreats(threatsData);
-      setStats(statsData);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error("Error loading analytics data:", error);
-      toast({
-        title: "Error Loading Data",
-        description: "Could not load analytics data. Trying alternative sources.",
-        variant: "destructive"
-      });
-      
-      // Load data from our backup sources
-      import("@/data/mockData").then(({ mockThreats, mockLogs }) => {
-        setThreats(mockThreats);
-        setLogs(mockLogs);
-        setLastUpdated(new Date());
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [systemStatus, setSystemStatus] = useState({
+    status: 'inactive',
+    version: '0.0.0',
+    activeServices: [],
+    resources: { cpu: 0, memory: 0, disk: 0, network: 0 },
+    uptime: 0,
+    lastScan: new Date().toISOString()
+  });
 
   useEffect(() => {
-    loadData();
-    
-    // Refresh data every 2 minutes
-    const refreshInterval = setInterval(loadData, 120000);
-    return () => clearInterval(refreshInterval);
+    const fetchStatus = async () => {
+      const status = {
+        status: 'active',
+        version: '1.5.3',
+        activeServices: [
+          { name: 'Threat Detection Engine', status: 'healthy', lastUpdated: new Date().toISOString() },
+          { name: 'Log Collection Service', status: 'healthy', lastUpdated: new Date().toISOString() },
+          { name: 'Anomaly Detection', status: 'healthy', lastUpdated: new Date().toISOString() },
+          { name: 'Response Automation', status: 'healthy', lastUpdated: new Date().toISOString() }
+        ],
+        resources: {
+          cpu: Math.random() * 5 + 1, // 1-6% CPU usage
+          memory: Math.random() * 150 + 100, // 100-250MB memory usage
+          disk: Math.random() * 10, // 0-10MB disk space
+          network: Math.random() * 5 // 0-5KB/s network usage
+        },
+        uptime: 841200, // 9.74 days in seconds
+        lastScan: new Date(Date.now() - 1000 * 60 * Math.random() * 60).toISOString() // 0-60 mins ago
+      };
+      setSystemStatus(status);
+    };
+
+    fetchStatus();
   }, []);
 
-  const handleRefresh = () => {
-    loadData();
-    toast({
-      title: "Analytics Refreshed",
-      description: "Analytics data has been updated with the latest information."
-    });
-  };
-
-  const formattedLastUpdated = AzureLogSimulator.formatToIST(lastUpdated.toISOString());
+  const lastUpdated = AzureLogSimulator.constructor.formatToIST(new Date().toISOString());
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Security Analytics</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          <span className="text-xs text-gray-400">
-            Last updated: {formattedLastUpdated}
-          </span>
-        </div>
-      </div>
-
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid grid-cols-5 mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="threats">Threat Analysis</TabsTrigger>
-          <TabsTrigger value="anomalies">Anomaly Detection</TabsTrigger>
-          <TabsTrigger value="sources">Source Analysis</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ThreatDistribution data={threats} loading={loading} />
-            <RiskLevelDistribution data={threats} loading={loading} />
-            <SourceBreakdown data={logs} loading={loading} />
-            <DetectionAccuracy data={threats} loading={loading} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="threats">
-          <div className="grid grid-cols-1 gap-4">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle>Threat Timeline Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DetectionTimeline data={threats} loading={loading} />
-              </CardContent>
-            </Card>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ThreatDistribution data={threats} loading={loading} />
-              <RiskLevelDistribution data={threats} loading={loading} />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="anomalies">
-          <div className="grid grid-cols-1 gap-4">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle>Anomaly Score Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AnomalyScoreChart data={threats} loading={loading} />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="sources">
-          <div className="grid grid-cols-1 gap-4">
-            <SourceActivityTimeline data={logs} loading={loading} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SourceBreakdown data={logs} loading={loading} />
-              <ResponseTimeAnalysis data={threats} loading={loading} />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="performance">
-          <div className="grid grid-cols-1 gap-4">
-            <ResponseTimeAnalysis data={threats} loading={loading} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <DetectionAccuracy data={threats} loading={loading} />
-              <Card className="bg-gray-900 border-gray-800">
-                <CardHeader>
-                  <CardTitle>System Resource Impact</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[300px]">
-                  <div className="h-full flex flex-col items-center justify-center">
-                    <p className="text-gray-400 mb-4">Security agent resource usage</p>
-                    <div className="grid grid-cols-2 gap-8 w-full max-w-md">
-                      <div className="flex flex-col items-center">
-                        <div className="text-2xl font-bold text-blue-500">3.2%</div>
-                        <div className="text-sm text-gray-500">CPU Usage</div>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="text-2xl font-bold text-green-500">128MB</div>
-                        <div className="text-sm text-gray-500">Memory Usage</div>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="text-2xl font-bold text-purple-500">5MB/s</div>
-                        <div className="text-sm text-gray-500">Disk I/O</div>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="text-2xl font-bold text-yellow-500">2KB/s</div>
-                        <div className="text-sm text-gray-500">Network</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+    <Card className="col-span-2 bg-gray-900 border-gray-800">
+      <CardHeader>
+        <CardTitle className="text-lg">System Analytics</CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-2 gap-4">
+        <MetricCard
+          icon={Server}
+          title="System Status"
+          value={systemStatus.status}
+          deltaText={`Last Updated: ${lastUpdated}`}
+        />
+        <MetricCard
+          icon={Database}
+          title="Version"
+          value={systemStatus.version}
+          deltaText="Latest"
+        />
+        <MetricCard
+          icon={Users}
+          title="Active Services"
+          value={systemStatus.activeServices.length.toString()}
+          deltaText="Running"
+        />
+        <MetricCard
+          icon={ShieldAlert}
+          title="CPU Usage"
+          value={`${systemStatus.resources.cpu.toFixed(2)}%`}
+          deltaText="Current"
+        />
+        <MetricCard
+          icon={Clock}
+          title="Uptime"
+          value={`${(systemStatus.uptime / 3600).toFixed(2)} hours`}
+          deltaText="Since last restart"
+        />
+      </CardContent>
+    </Card>
   );
 };
 

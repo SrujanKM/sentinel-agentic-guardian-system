@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -105,17 +104,14 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
     }
   };
   
-  // Ensure consistent time format across components
-  const getTimeAgo = (timestamp) => {
-    if (!timestamp) return "Unknown time";
-    return AzureLogSimulator.formatTimeAgo(timestamp);
+  const formatTimeAgo = (timestamp) => {
+    return AzureLogSimulator.constructor.formatTimeAgo(timestamp);
   };
-  
-  const getFormattedTime = (timestamp) => {
-    if (!timestamp) return "Unknown time";
-    return AzureLogSimulator.formatToIST(timestamp);
+
+  const formatTimestamp = (timestamp) => {
+    return AzureLogSimulator.constructor.formatToIST(timestamp);
   };
-  
+
   const filteredThreats = threats.filter(threat => {
     if (activeFilter === "all") return true;
     if (activeFilter === "active") return threat.status === "active";
@@ -141,7 +137,6 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
       );
     });
 
-  // Pagination calculation
   const totalPages = Math.ceil(sortedThreats.length / THREATS_PER_PAGE);
   const paginatedThreats = expanded 
     ? sortedThreats
@@ -308,8 +303,8 @@ const ThreatTimeline = ({ threats, onThreatSelect, expanded = false }) => {
                       <h4 className="font-medium text-white">{threat.title}</h4>
                       <div className="text-xs text-gray-400 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        <span title={getFormattedTime(threat.timestamp)}>
-                          {getTimeAgo(threat.timestamp)}
+                        <span title={formatTimestamp(threat.timestamp)}>
+                          {formatTimeAgo(threat.timestamp)}
                         </span>
                       </div>
                     </div>

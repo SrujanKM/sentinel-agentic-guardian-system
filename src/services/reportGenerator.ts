@@ -1,6 +1,5 @@
-
 import { jsPDF } from "jspdf";
-import { autoTable } from "jspdf-autotable";
+import 'jspdf-autotable';
 import { saveAs } from "file-saver";
 import AzureLogSimulator from "./azureLogSimulator";
 
@@ -26,19 +25,20 @@ declare module "jspdf" {
     lastAutoTable?: {
       finalY: number;
     };
+    autoTable: any;
   }
 }
 
 class ReportGenerator {
   formatTimestamp(timestamp: string): string {
-    return AzureLogSimulator.formatToIST(timestamp);
+    return AzureLogSimulator.constructor.formatToIST(timestamp);
   }
 
   // Generate PDF report
   async generatePDFReport(threats: any[], logs: any[], options: ReportOptions) {
     const doc = new jsPDF();
     const now = new Date();
-    const reportDate = AzureLogSimulator.formatToIST(now.toISOString());
+    const reportDate = AzureLogSimulator.constructor.formatToIST(now.toISOString());
 
     // Add header
     doc.setFontSize(18);
@@ -63,7 +63,7 @@ class ReportGenerator {
           threat.source || "Unknown"
         ]);
 
-        autoTable(doc, {
+        doc.autoTable({
           startY: 50,
           head: [["Timestamp", "Threat", "Severity", "Status", "Source"]],
           body: threatData,
@@ -94,7 +94,7 @@ class ReportGenerator {
           log.message?.substring(0, 50) + (log.message?.length > 50 ? "..." : "") || ""
         ]);
 
-        autoTable(doc, {
+        doc.autoTable({
           startY: currentY + 5,
           head: [["Timestamp", "Level", "Source", "Message"]],
           body: logData,
