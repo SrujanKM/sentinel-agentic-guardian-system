@@ -5,7 +5,7 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { Clock, Database, Server, ShieldAlert, Users } from "lucide-react";
 import AzureLogSimulator from "@/services/azureLogSimulator";
 
-const AnalyticsModule = ({ activeThreatCount = 0 }) => {
+const AnalyticsModule = () => {
   const [systemStatus, setSystemStatus] = useState({
     status: 'inactive',
     version: '0.0.0',
@@ -70,9 +70,9 @@ const AnalyticsModule = ({ activeThreatCount = 0 }) => {
         />
         <MetricCard
           icon={ShieldAlert}
-          title="Active Threats"
-          value={activeThreatCount.toString()}
-          deltaText={activeThreatCount === 0 ? "System Protected" : "Requires Attention"}
+          title="CPU Usage"
+          value={`${systemStatus.resources.cpu.toFixed(2)}%`}
+          deltaText="Current"
         />
         <MetricCard
           icon={Clock}
