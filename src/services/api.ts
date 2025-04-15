@@ -2,6 +2,24 @@
 import { faker } from '@faker-js/faker';
 import AzureLogSimulator from './azureLogSimulator';
 
+// Define proper interfaces for our filtering options
+interface LogFilterOptions {
+  limit?: number;
+  source?: string;
+  level?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+interface ThreatFilterOptions {
+  limit?: number;
+  severity?: string;
+  type?: string;
+  status?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
 // Mocked API functions for fetching data
 export async function fetchSystemStatus() {
   // Simulate API call latency
@@ -28,7 +46,7 @@ export async function fetchSystemStatus() {
 }
 
 // Fetch logs with optional filters
-export async function fetchLogs(options = {}) {
+export async function fetchLogs(options: LogFilterOptions = {}) {
   const { limit = 30, source, level, fromDate, toDate } = options;
   
   // Simulate API call latency
@@ -65,7 +83,7 @@ export async function fetchLogs(options = {}) {
 }
 
 // Fetch threats with optional filters
-export async function fetchThreats(options = {}) {
+export async function fetchThreats(options: ThreatFilterOptions = {}) {
   const { limit = 20, severity, type, status, fromDate, toDate } = options;
   
   // Simulate API call latency
@@ -106,7 +124,7 @@ export async function fetchThreats(options = {}) {
 }
 
 // Trigger action against a threat or for the system
-export async function triggerAction(actionDetails) {
+export async function triggerAction(actionDetails: any) {
   // Simulate API call latency
   await new Promise(resolve => setTimeout(resolve, Math.random() * 1200 + 400));
   

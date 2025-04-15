@@ -4,13 +4,30 @@ import { autoTable } from "jspdf-autotable";
 import { saveAs } from "file-saver";
 import AzureLogSimulator from "./azureLogSimulator";
 
+// Define and export the ReportOptions interface
+export interface ReportOptions {
+  type: "pdf" | "csv";
+  content: "all" | "threats" | "logs";
+  timeRange: "24h" | "7d" | "30d" | "all";
+  includeResolvedThreats: boolean;
+}
+
 // Default report options
-export const defaultReportOptions = {
+export const defaultReportOptions: ReportOptions = {
   type: "pdf",
   content: "all",
   timeRange: "24h",
   includeResolvedThreats: true
 };
+
+// Extend jsPDF to include lastAutoTable property
+declare module "jspdf" {
+  interface jsPDF {
+    lastAutoTable?: {
+      finalY: number;
+    };
+  }
+}
 
 class ReportGenerator {
   formatTimestamp(timestamp: string): string {
@@ -18,7 +35,7 @@ class ReportGenerator {
   }
 
   // Generate PDF report
-  async generatePDFReport(threats: any[], logs: any[], options: any) {
+  async generatePDFReport(threats: any[], logs: any[], options: ReportOptions) {
     const doc = new jsPDF();
     const now = new Date();
     const reportDate = AzureLogSimulator.formatToIST(now.toISOString());
@@ -109,7 +126,7 @@ class ReportGenerator {
   }
 
   // Generate CSV report
-  async generateCSVReport(threats: any[], logs: any[], options: any) {
+  async generateCSVReport(threats: any[], logs: any[], options: ReportOptions) {
     let csvContent = "";
     const now = new Date();
 
@@ -150,7 +167,7 @@ class ReportGenerator {
   }
 
   // Generate a report based on options
-  async generateReport(threats: any[], logs: any[], options = defaultReportOptions) {
+  async generateReport(threats: any[], logs: any[], options: ReportOptions = defaultReportOptions) {
     try {
       if (options.type === "pdf") {
         await this.generatePDFReport(threats, logs, options);
@@ -164,7 +181,7 @@ class ReportGenerator {
   }
 
   // Helper to filter threats based on options
-  filterThreats(threats: any[], options: any) {
+  filterThreats(threats: any[], options: ReportOptions) {
     return threats.filter(threat => {
       // Filter by status
       if (!options.includeResolvedThreats && threat.status === "resolved") {
@@ -185,7 +202,7 @@ class ReportGenerator {
   }
 
   // Helper to filter logs based on options
-  filterLogs(logs: any[], options: any) {
+  filterLogs(logs: any[], options: ReportOptions) {
     return logs.filter(log => {
       // Filter by time range
       if (options.timeRange !== "all") {
