@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,7 +25,6 @@ const LogsPanel = ({ logs = [] }) => {
     setLocalLogs(logs);
   }, [logs]);
 
-  // Refresh logs less frequently (every 60 seconds instead of 15)
   useEffect(() => {
     const refreshInterval = setInterval(async () => {
       try {
@@ -35,7 +33,7 @@ const LogsPanel = ({ logs = [] }) => {
       } catch (error) {
         console.error("Failed to refresh logs:", error);
       }
-    }, 60000); // Changed from 15000 to 60000 for less frequent updates
+    }, 60000);
 
     return () => clearInterval(refreshInterval);
   }, []);
@@ -73,6 +71,19 @@ const LogsPanel = ({ logs = [] }) => {
     return matchesSearch && matchesLevel && matchesSource;
   });
 
+  const getStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case "error":
+        return "bg-red-500/20 text-red-400 border-red-600";
+      case "warning":
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-600";
+      case "info":
+        return "bg-blue-500/20 text-blue-400 border-blue-600";
+      default:
+        return "bg-gray-500/20 text-gray-400 border-gray-500";
+    }
+  };
+  
   const getLogIcon = (level) => {
     switch (level.toLowerCase()) {
       case "error":
@@ -247,7 +258,6 @@ const LogsPanel = ({ logs = [] }) => {
                         <div className="flex items-center gap-2">
                           <Clock className="h-3 w-3 text-gray-400" />
                           <span className="font-mono text-gray-400">
-                            {/* Format timestamp in IST with full date and time */}
                             {AzureLogSimulator.formatToIST(log.timestamp)}
                           </span>
                         </div>

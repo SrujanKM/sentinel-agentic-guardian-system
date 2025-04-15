@@ -1,4 +1,3 @@
-
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import { saveAs } from "file-saver";
@@ -79,7 +78,7 @@ class ReportGenerator {
     // Add logs section
     if (options.content === "logs" || options.content === "all") {
       // Calculate Y position for logs section
-      const currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 50;
+      const currentY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 15 : 50;
       
       doc.setFontSize(14);
       doc.text("Azure Logs", 14, currentY);

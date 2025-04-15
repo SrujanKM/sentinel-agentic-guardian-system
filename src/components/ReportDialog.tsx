@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { FilePdf, FileSpreadsheet, Download } from "lucide-react";
+import { FileText, FileSpreadsheet, Download } from "lucide-react";  // Changed FilePdf to FileText
 import reportGenerator, { ReportOptions, defaultReportOptions } from "@/services/reportGenerator";
 import { fetchLogs, fetchThreats } from "@/services/api";
 
@@ -84,7 +84,7 @@ const ReportDialog = ({ open, onOpenChange }: ReportDialogProps) => {
                   <div className="flex items-center space-x-2 rounded-md border border-gray-700 p-3 hover:bg-gray-800">
                     <RadioGroupItem value="pdf" id="pdf" />
                     <Label htmlFor="pdf" className="flex items-center cursor-pointer">
-                      <FilePdf className="mr-2 h-5 w-5 text-red-500" />
+                      <FileText className="mr-2 h-5 w-5 text-red-500" /> {/* Changed from FilePdf to FileText */}
                       PDF Document
                     </Label>
                   </div>

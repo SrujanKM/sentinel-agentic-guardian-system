@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ const ThreatDetails = ({ selectedThreat }) => {
   const [isResolving, setIsResolving] = useState(false);
   const [isResolved, setIsResolved] = useState(false);
 
-  // Reset state when a different threat is selected
   useEffect(() => {
     if (selectedThreat) {
       setIsResolved(selectedThreat.status === "resolved");
@@ -95,7 +93,6 @@ const ThreatDetails = ({ selectedThreat }) => {
         }
       });
       
-      // Update local state for THIS threat only
       setIsResolved(true);
       selectedThreat.status = "resolved";
       
